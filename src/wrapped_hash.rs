@@ -4,6 +4,10 @@ use hdk::prelude::*;
 #[derive(Debug, Serialize, Deserialize, SerializedBytes, Clone, PartialEq)]
 struct UIStringHash(String);
 
+/// A version of an [AgentPubKey] that will automatically
+/// serialize and deserialize to/from string based hashes for use on your
+/// client side. It is used by functions throughout this library. You may wish to use it
+/// as a type for your fields on an entry type, if trying to reference an [AgentPubKey].
 #[derive(Debug, Serialize, Deserialize, SerializedBytes, Clone, PartialEq)]
 #[serde(try_from = "UIStringHash")]
 #[serde(into = "UIStringHash")]
@@ -15,6 +19,10 @@ impl WrappedAgentPubKey {
   }
 }
 
+/// A version of an [HeaderHash] that will automatically
+/// serialize and deserialize to/from string based hashes for use on your
+/// client side. It is used by functions throughout this library. You may wish to use it
+/// as a type for your fields on an entry type, if trying to reference an [HeaderHash].
 #[derive(Debug, Serialize, Deserialize, SerializedBytes, Clone, PartialEq)]
 #[serde(try_from = "UIStringHash")]
 #[serde(into = "UIStringHash")]
@@ -26,6 +34,10 @@ impl WrappedHeaderHash {
   }
 }
 
+/// A version of an [EntryHash] that will automatically
+/// serialize and deserialize to/from string based hashes for use on your
+/// client side. It is used by functions throughout this library. You may wish to use it
+/// as a type for your fields on an entry type, if trying to reference an [EntryHash].
 #[derive(Debug, Serialize, Deserialize, SerializedBytes, Clone, PartialEq)]
 #[serde(try_from = "UIStringHash")]
 #[serde(into = "UIStringHash")]

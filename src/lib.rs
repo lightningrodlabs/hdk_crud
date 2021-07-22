@@ -1,4 +1,3 @@
-pub use paste;
 
 #[cfg(test)]
 use ::fixt::prelude::*;

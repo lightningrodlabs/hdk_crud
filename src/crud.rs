@@ -1,46 +1,65 @@
-
-
+/// A macro to go quick and easy
+/// from having just a Holochain entry definition
+/// to having a full create-read-update-delete set of
+/// functionality in your Zome, plus "signals" (events).
+/// See [example] for a comprehensive look at how this works.
+/// ```ignore
+/// use hdk::prelude::*;
+/// use hdk_crud::*;
+///
+/// #[hdk_entry(id = "test")]
+/// #[derive(Clone, PartialEq)]
+/// pub struct Test {
+///     pub number: i32,
+/// }
+/// // ExampleSignal pops out of the crud! macro
+/// #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
+/// #[serde(untagged)]
+/// pub enum TestSignalTypes {
+///     Test(TestSignal)
+/// }
+/// pub fn convert_to_receiver_signal(signal: TestSignal) -> TestSignalTypes {
+///     TestSignalTypes::Test(signal)
+/// }
+/// pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
+///     Ok(Vec::new())
+/// }
+/// crud!(
+///     Test,
+///     test,
+///     "test",
+///     get_peers,
+///     convert_to_receiver_signal
+/// );
+/// ```
 #[macro_export]
 macro_rules! crud {
     (
       $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $convert_to_receiver_signal:ident
     ) => {
-
-        $crate::paste::paste! {
+        ::paste::paste! {
+          /// This is the &str that can be passed into Path to
+          /// find all the entries created using these create functions
+          /// which are linked off of this Path.
           pub const [<$i:upper _PATH>]: &str = $path;
 
+          /// Retrieve the Path for these entry types
+          /// to which all entries are linked
+          pub fn [<get_ $i _path>]() -> Path {
+            Path::from([<$i:upper _PATH>])
+          }
+
+          #[doc = "This data structure will be very broadly useful and represents
+          how an entry should be serialized along with what metadata to
+          form a consistent pattern that the UI or client can expect.
+          It is called `" $crud_type "WireEntry` because it is how data looks passed
+          'over the wire' or network."]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
           pub struct [<$crud_type WireEntry>] {
             pub entry: $crud_type,
             pub address: $crate::WrappedHeaderHash,
             pub entry_address: $crate::WrappedEntryHash
           }
-
-          // this will be used to send these data structures as signals to the UI
-          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
-          // untagged because the useful tagging is done externally on the *Signal object
-          // as the tag and action
-          #[serde(untagged)]
-          pub enum [<$crud_type SignalData>] {
-            Create([<$crud_type WireEntry>]),
-            Update([<$crud_type WireEntry>]),
-            Delete($crate::WrappedHeaderHash),
-          }
-
-          // this will be used to send these data structures as signals to the UI
-          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
-          pub struct [<$crud_type Signal>] {
-            pub entry_type: String,
-            pub action: $crate::ActionType,
-            pub data: [<$crud_type SignalData>],
-          }
-
-          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
-          pub struct [<$crud_type UpdateInput>] {
-            pub entry: $crud_type,
-            pub address: $crate::WrappedHeaderHash,
-          }
-
           impl From<$crate::EntryAndHash<$crud_type>> for [<$crud_type WireEntry>] {
             fn from(entry_and_hash: $crate::EntryAndHash<$crud_type>) -> Self {
               [<$crud_type WireEntry>] {
@@ -51,16 +70,32 @@ macro_rules! crud {
             }
           }
 
+          // expand the special types for Signals
+          $crate::signal_types!($crud_type);
+
+          #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
+          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
+          pub struct [<$crud_type UpdateInput>] {
+            pub entry: $crud_type,
+            pub address: $crate::WrappedHeaderHash,
+          }
+
+          #[doc ="This is what will be returned by a call to [fetch_" $path "s] or [inner_fetch_" $path "s] 
+          It is just a list/vec of [" $crud_type "WireEntry]. It is defined for the purposes of serialization."]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
           pub struct [<Vec $crud_type WireEntry>](pub Vec<[<$crud_type WireEntry>]>);
 
           /*
             CREATE
           */
+          /// This will create an entry and link it off the main Path.
+          /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
+          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+          #[doc="This will be called with `send_signal` as `true` by [create_" $i "]"]
           pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<[<$crud_type WireEntry>]> {
             let address = create_entry(&entry)?;
             let entry_hash = hash_entry(&entry)?;
-            let path = Path::from([<$i:upper _PATH>]);
+            let path = [< get_ $i _path >]();
             path.ensure()?;
             let path_hash = path.hash()?;
             create_link(path_hash, entry_hash.clone(), ())?;
@@ -82,6 +117,11 @@ macro_rules! crud {
             Ok(wire_entry)
           }
 
+          /// This is the exposed/public Zome function for creating an entry of this type.
+          /// This will create an entry and link it off the main Path.
+          /// It will send a signal of this event
+          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+          #[doc="This just calls [inner_create_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<[<$crud_type WireEntry>]> {
             [<inner_create_ $i>](entry, true)
@@ -90,12 +130,17 @@ macro_rules! crud {
           /*
             READ
           */
+          /// This is the exposed/public Zome function for fetching ALL the entries of the type.
           pub fn [<inner_fetch_ $i s>](get_options: GetOptions) -> ExternResult<[<Vec $crud_type WireEntry>]> {
-            let path_hash = Path::from([<$i:upper _PATH>]).hash()?;
+            let path_hash = [< get_ $i _path >]().hash()?;
             let entries = $crate::fetch_links::<$crud_type, [<$crud_type WireEntry>]>(path_hash, get_options)?;
             Ok([<Vec $crud_type WireEntry>](entries))
           }
-
+          
+          /// This is the exposed/public Zome function for fetching ALL the entries of the type.
+          /// No signals will be sent as a result of calling this.
+          /// Notice that it pluralizes the value of `$i`, the second argument to the crud! macro call.
+          #[doc="This just calls [inner_fetch_" $i "s]."]
           #[hdk_extern]
           pub fn [<fetch_ $i s>](_: ()) -> ExternResult<[<Vec $crud_type WireEntry>]> {
             [<inner_fetch_ $i s>](GetOptions::latest())
@@ -104,6 +149,9 @@ macro_rules! crud {
           /*
             UPDATE
           */
+          /// This will add an update to an entry.
+          /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
+          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<[<$crud_type WireEntry>]> {
             update_entry(update.address.0.clone(), &update.entry)?;
             let entry_address = hash_entry(&update.entry)?;
@@ -125,6 +173,11 @@ macro_rules! crud {
             Ok(wire_entry)
           }
 
+          /// This is the exposed/public Zome function for creating an entry of this type.
+          /// This will add an update to an entry.
+          /// It will send a signal of this event
+          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+          #[doc="This just calls [inner_update_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<[<$crud_type WireEntry>]> {
             [<inner_update_ $i>](update, true)
@@ -133,6 +186,11 @@ macro_rules! crud {
           /*
             DELETE
           */
+          /// This will mark the entry at `address` as "deleted".
+          #[doc="It will no longer be returned by [fetch_" $i "s]."]
+          /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
+          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+          #[doc="This will be called with `send_signal` as `true` by [archive_" $i "]"]
           pub fn [<inner_archive_ $i>](address: $crate::WrappedHeaderHash, send_signal: bool) -> ExternResult<$crate::WrappedHeaderHash> {
             delete_entry(address.0.clone())?;
             if (send_signal) {
@@ -148,10 +206,93 @@ macro_rules! crud {
             Ok(address)
           }
 
+          /// This is the exposed/public Zome function for archiving an entry of this type.
+          /// This will mark the entry at `address` as "deleted".
+          #[doc="It will no longer be returned by [fetch_" $i "s]."]
+          /// It will send a signal of this event
+          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+          #[doc="This just calls [inner_archive_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<archive_ $i>](address: $crate::WrappedHeaderHash) -> ExternResult<$crate::WrappedHeaderHash> {
             [<inner_archive_ $i>](address, true)
           }
         }
     };
+}
+
+/// Take a look at this module to get a concrete example
+/// of what you need to pass the crud! macro, as well
+/// as what you'll get back out of it.
+/// Anything that says "NOT GENERATED" is not
+/// generated by the crud! macro call, and the rest is
+/// It will generate 4 public Zome functions, as well as
+/// some inner functions called by those that you can refer to
+/// and call elsewhere. The 4 Zome functions in this example would be:
+/// [create_example](example::create_example), [fetch_examples](example::create_example), [update_example](example::create_example), and [archive_example](example::create_example).
+pub mod example {
+    use hdk::prelude::*;
+
+    /// NOT GENERATED
+    /// This is our example hdk_entry entry
+    /// type definition.
+    #[hdk_entry(id = "example")]
+    #[derive(Clone, PartialEq)]
+    pub struct Example {
+        pub number: i32,
+    }
+
+    /// NOT GENERATED
+    /// A high level signal type to unify all the entry type specific
+    /// signal types
+    #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
+    // untagged because the useful tagging is done internally on the *Signal objects
+    #[serde(untagged)]
+    pub enum SignalTypes {
+        Example(ExampleSignal)
+    }
+
+    /// NOT GENERATED
+    /// Signal Receiver
+    /// (forwards signals to the UI)
+    /// would be handling a 
+    #[hdk_extern]
+    pub fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
+      Ok(emit_signal(&signal)?)
+    }
+
+    /// NOT GENERATED
+    /// This handles the conversion from its predefined type
+    /// to some slightly modified type that it should be sent over the
+    /// wire as. It is sort of like a pre-signal-fire hook
+    /// presenting the chance to do type conversion
+    pub fn convert_to_receiver_signal(signal: ExampleSignal) -> SignalTypes {
+        SignalTypes::Example(signal)
+    }
+
+    /// NOT GENERATED
+    /// This handles the fetching of a list of peers to which to send
+    /// signals. In this example it's an empty list. Your function
+    /// signature should match this function signature.
+    pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
+        Ok(Vec::new())
+    }
+
+    crud!(
+        Example,
+        example,
+        "example",
+        get_peers,
+        convert_to_receiver_signal
+    );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::example::*;
+
+    #[test]
+    fn it_works() {
+        let e: Example = Example { number: 2 };
+        assert_eq!(e, Example { number: 2 });
+    }
 }

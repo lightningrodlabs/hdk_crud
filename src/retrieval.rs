@@ -10,11 +10,18 @@ pub type OptionEntryAndHash<T> = Option<EntryAndHash<T>>;
 
 /// convert a SignedHeaderHashed which are like raw contents
 /// into the HeaderHash of itself
-pub fn get_header_hash(signed_header_hashed: element::SignedHeaderHashed) -> HeaderHash {
+fn get_header_hash(signed_header_hashed: element::SignedHeaderHashed) -> HeaderHash {
     signed_header_hashed.header_hashed().as_hash().to_owned()
 }
 
-///
+/// If an entry at the `entry_hash` has multiple updates to itself, this
+/// function will sort through them by timestamp in order to return the contents
+/// of the latest update. It also has the special behaviour of returning the
+/// ORIGINAL HeaderHash, as opposed to the HeaderHash of the Header that performed
+/// that latest update. This is useful if you want hashes in your application
+/// to act consistently, almost acting as an "id" in a centralized system.
+/// It simplifies traversal of the update tree, since all updates
+/// made by the client can reference the original, instead of updates reference updates
 pub fn get_latest_for_entry<T: TryFrom<SerializedBytes, Error = SerializedBytesError>>(
     entry_hash: EntryHash,
     get_options: GetOptions,
@@ -63,7 +70,9 @@ pub fn get_latest_for_entry<T: TryFrom<SerializedBytes, Error = SerializedBytesE
     }
 }
 
-///
+/// Fetch and deserialize all the entries of a certain type that are linked to an EntryHash.
+/// Useful for having a Path that you link everything to. This also internally calls [get_latest_for_entry] meaning
+/// that the contents for each entry returned are automatically the latest contents.
 pub fn fetch_links<
     EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
     WireEntry: From<EntryAndHash<EntryType>>,

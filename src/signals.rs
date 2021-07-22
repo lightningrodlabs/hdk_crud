@@ -1,4 +1,3 @@
-
 use hdk::prelude::*;
 use std::fmt;
 
@@ -43,14 +42,55 @@ impl fmt::Display for ActionType {
 /// calls to its `recv_remote_signal` endpoint via others
 /// calling `remote_signal`
 pub fn create_receive_signal_cap_grant() -> ExternResult<()> {
-  let mut functions: GrantedFunctions = BTreeSet::new();
-  functions.insert((zome_info()?.zome_name, "recv_remote_signal".into()));
+    let mut functions: GrantedFunctions = BTreeSet::new();
+    functions.insert((zome_info()?.zome_name, "recv_remote_signal".into()));
 
-  create_cap_grant(CapGrantEntry {
-      tag: "".into(),
-      // empty access converts to unrestricted
-      access: ().into(),
-      functions,
-  })?;
-  Ok(())
+    create_cap_grant(CapGrantEntry {
+        tag: "".into(),
+        // empty access converts to unrestricted
+        access: ().into(),
+        functions,
+    })?;
+    Ok(())
+}
+
+
+/// Create 2 special types from an existing type
+/// that are optimized as a data structure for sending signals
+/// to a UI or client that relate to core Holochain actions for
+/// entry types: Create, Update, and Delete
+#[macro_export]
+macro_rules! signal_types {
+    (
+      $crud_type:ident
+    ) => {
+        ::paste::paste! {
+          /// Distinguishes between what data structures should be passed
+          /// to the UI based on different action types, like create/update/delete
+          /// this will be used to send these data structures as signals to the UI
+          /// When Create/Update, we will pass the actual new Entry
+          /// but when doing Delete we will naturally only pass the HeaderHash
+          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
+          // untagged because the useful tagging is done externally on the *Signal object
+          // as the tag and action
+          #[serde(untagged)]
+          pub enum [<$crud_type SignalData>] {
+            Create([<$crud_type WireEntry>]),
+            Update([<$crud_type WireEntry>]),
+            Delete($crate::WrappedHeaderHash),
+          }
+
+          /// This will be used to send data events as signals to the UI. All
+          /// signals relating to the entry type will share this high level structure, creating consistency. 
+          /// The `data` field should use the variant (Create/Update/Delete)
+          /// that matches the variant for `action`. So if `action` is variant [ActionType::Create](crate::ActionType::Create)
+          #[doc = " then `data` should be [" $crud_type "SignalData::Create]."]
+          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
+          pub struct [<$crud_type Signal>] {
+            pub entry_type: String,
+            pub action: $crate::ActionType,
+            pub data: [<$crud_type SignalData>],
+          }
+        }
+    };
 }
