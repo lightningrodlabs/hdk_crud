@@ -1,22 +1,22 @@
 [package]
 name = "hdk_crud"
 description = "A library to help quickly and easily create a consistent set of create-read-update-delete functions for an Entry type in Holochain, complete with signaling options"
-version = "0.0.1"
+version = "0.0.11"
 license = "CAL-1.0"
 repository = "https://github.com/lightningrodlabs/hdk_crud"
 authors = ["Connor Turland <connor@sprillow.com>"]
 edition = "2018"
 
 [dependencies]
-hdk = { git = "https://github.com/holochain/holochain", rev = "10d6c331acdeb2dff608b5f6533b6ea50e833408", version = "0.0.101-alpha.0" }
+hdk = { version = "0.0.101" }
 paste = "1.0.5"
 serde = "1.0.123"
 thiserror = "1"
 mockall = "0.9"
 
 [dev-dependencies]
-fixt = { git = "https://github.com/holochain/holochain", branch = "2021-05-12-deepkey-tweaks" }
-holochain_types = { git = "https://github.com/holochain/holochain", branch = "2021-05-12-deepkey-tweaks" }
+fixt = "0.0.3"
+holochain_types = "0.0.1"
 rand = "0.7"
 strum = "0.18.0"
 strum_macros = "0.18.0"

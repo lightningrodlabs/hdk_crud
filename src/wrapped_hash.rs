@@ -43,6 +43,12 @@ impl WrappedHeaderHash {
 #[serde(into = "UIStringHash")]
 pub struct WrappedEntryHash(pub EntryHash);
 
+impl WrappedEntryHash {
+  pub fn new(entry_hash: EntryHash) -> Self {
+      Self(entry_hash)
+  }
+}
+
 impl TryFrom<UIStringHash> for WrappedAgentPubKey {
     type Error = String;
     fn try_from(ui_string_hash: UIStringHash) -> Result<Self, Self::Error> {
@@ -86,4 +92,26 @@ impl From<WrappedEntryHash> for UIStringHash {
     fn from(wrapped_entry_hash: WrappedEntryHash) -> Self {
         Self(wrapped_entry_hash.0.to_string())
     }
+}
+
+
+#[cfg(test)]
+pub mod fixtures {
+  use ::fixt::prelude::*;
+  use super::*;
+
+  fixturator!(
+    WrappedHeaderHash;
+      constructor fn new(HeaderHash);
+  );
+
+  fixturator!(
+    WrappedAgentPubKey;
+      constructor fn new(AgentPubKey);
+  );
+
+  fixturator!(
+    WrappedEntryHash;
+      constructor fn new(EntryHash);
+  );
 }

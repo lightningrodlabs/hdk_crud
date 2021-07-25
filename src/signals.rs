@@ -54,7 +54,6 @@ pub fn create_receive_signal_cap_grant() -> ExternResult<()> {
     Ok(())
 }
 
-
 /// Create 2 special types from an existing type
 /// that are optimized as a data structure for sending signals
 /// to a UI or client that relate to core Holochain actions for
@@ -81,7 +80,7 @@ macro_rules! signal_types {
           }
 
           /// This will be used to send data events as signals to the UI. All
-          /// signals relating to the entry type will share this high level structure, creating consistency. 
+          /// signals relating to the entry type will share this high level structure, creating consistency.
           /// The `data` field should use the variant (Create/Update/Delete)
           /// that matches the variant for `action`. So if `action` is variant [ActionType::Create](crate::ActionType::Create)
           #[doc = " then `data` should be [" $crud_type "SignalData::Create]."]
@@ -93,4 +92,48 @@ macro_rules! signal_types {
           }
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::create_receive_signal_cap_grant;
+    use ::fixt::prelude::*;
+    use hdk::prelude::*;
+    use holochain_types::prelude::HeaderHashFixturator;
+    use holochain_types::prelude::ZomeInfoFixturator;
+
+    #[test]
+    fn test_create_receive_signal_cap_grant() {
+        // set up the mock hdk responses
+        let mut mock_hdk = MockHdkT::new();
+        // zome info is dynamic so
+        // that this is generic and usable in any zome
+        let zome_info = fixt!(ZomeInfo);
+        mock_hdk
+            .expect_zome_info()
+            .times(1)
+            .return_const(Ok(zome_info.clone()));
+        // create_cap_grant calls just `create` under the hood
+        let mut functions: GrantedFunctions = BTreeSet::new();
+        functions.insert((zome_info.zome_name, "recv_remote_signal".into()));
+        let expected = EntryWithDefId::new(
+            EntryDefId::CapGrant,
+            Entry::CapGrant(CapGrantEntry {
+                tag: "".into(),
+                // empty access converts to unrestricted
+                access: ().into(),
+                functions,
+            }),
+        );
+        let header_hash = fixt!(HeaderHash);
+        mock_hdk
+            .expect_create()
+            .with(mockall::predicate::eq(expected))
+            .times(1)
+            .return_const(Ok(header_hash));
+        set_hdk(mock_hdk);
+        // call the function we are testing
+        let result = create_receive_signal_cap_grant();
+        assert_eq!(result.is_ok(), true);
+    }
 }

@@ -1,7 +1,4 @@
 
-#[cfg(test)]
-use ::fixt::prelude::*;
-
 mod signals;
 pub use signals::*;
 
