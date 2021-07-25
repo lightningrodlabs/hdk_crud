@@ -95,7 +95,7 @@ impl From<WrappedEntryHash> for UIStringHash {
 }
 
 
-#[cfg(test)]
+#[cfg(feature = "test_utils")]
 pub mod fixtures {
   use ::fixt::prelude::*;
   use super::*;
