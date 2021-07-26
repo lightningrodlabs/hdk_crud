@@ -255,7 +255,6 @@ pub mod example {
     /// Signal Receiver
     /// (forwards signals to the UI)
     /// would be handling a 
-    #[hdk_extern]
     pub fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
       Ok(emit_signal(&signal)?)
     }
