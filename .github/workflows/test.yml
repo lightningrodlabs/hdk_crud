@@ -12,4 +12,4 @@ jobs:
        with:
          toolchain: stable
          target: wasm32-unknown-unknown
-     - run: ./run-test.sh
+     - run: cargo build --release --target wasm32-unknown-unknown
