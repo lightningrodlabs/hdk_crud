@@ -8,15 +8,16 @@ authors = ["Connor Turland <connor@sprillow.com>"]
 edition = "2018"
 
 [dependencies]
-hdk = { version = "0.0.101" }
+# hdk = { version = "0.0.102" }
+hdk = { git = "https://github.com/Connoropolous/holochain.git", branch = "develop" }
 paste = "1.0.5"
 serde = "1.0.123"
 thiserror = "1"
 mockall = "0.9"
-fixt = { version = "0.0.3", optional = true }
+# fixt = { version = "0.0.4", optional = true }
+fixt = { git = "https://github.com/Connoropolous/holochain.git", branch = "develop", optional = true }
 
 [dev-dependencies]
-holochain_types = "0.0.1"
 rand = "0.7"
 strum = "0.18.0"
 strum_macros = "0.18.0"
@@ -24,4 +25,3 @@ strum_macros = "0.18.0"
 [features]
 mock = ["hdk/mock", "hdk/test_utils", "fixt"]
 test_utils = ["fixt"]
-
