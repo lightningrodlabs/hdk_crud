@@ -18,10 +18,6 @@ mockall = "0.9"
 fixt = { git = "https://github.com/Connoropolous/holochain.git", branch = "develop", optional = true }
 
 [dev-dependencies]
-# holochain_types = "0.0.2"
-holochain_types = { git = "https://github.com/Connoropolous/holochain.git", branch = "develop", features = [
-  "fixturators"
-] }
 rand = "0.7"
 strum = "0.18.0"
 strum_macros = "0.18.0"
