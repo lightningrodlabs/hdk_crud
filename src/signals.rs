@@ -99,8 +99,6 @@ mod tests {
     use super::create_receive_signal_cap_grant;
     use ::fixt::prelude::*;
     use hdk::prelude::*;
-    use holochain_types::prelude::HeaderHashFixturator;
-    use holochain_types::prelude::ZomeInfoFixturator;
 
     #[test]
     fn test_create_receive_signal_cap_grant() {
