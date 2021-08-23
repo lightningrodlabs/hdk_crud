@@ -427,7 +427,7 @@ dependencies = [
 
 [[package]]
 name = "hdk_crud"
-version = "0.0.13"
+version = "0.0.103"
 dependencies = [
  "fixt",
  "hdk",
