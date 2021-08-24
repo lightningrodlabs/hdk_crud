@@ -268,6 +268,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "fixt"
+version = "0.0.5"
+source = "git+https://github.com/holochain/holochain.git?branch=Connoropolous-patch-2#e70979fb1564e6c0b377f8b8a24e791845da8a02"
+dependencies = [
+ "holochain_serialized_bytes",
+ "lazy_static",
+ "parking_lot 0.10.2",
+ "paste",
+ "rand 0.7.3",
+ "rand_core 0.5.1",
+ "serde",
+ "strum",
+ "strum_macros",
+]
+
+[[package]]
 name = "float-cmp"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -408,8 +424,7 @@ checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 [[package]]
 name = "hdk"
 version = "0.0.103"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9db0b17d4437e059a8be15cc6b426ab52e785349a33f023a1d5cd6db88c7dfae"
+source = "git+https://github.com/holochain/holochain.git?branch=Connoropolous-patch-2#e70979fb1564e6c0b377f8b8a24e791845da8a02"
 dependencies = [
  "hdk_derive",
  "holo_hash",
@@ -429,7 +444,7 @@ dependencies = [
 name = "hdk_crud"
 version = "0.0.103"
 dependencies = [
- "fixt",
+ "fixt 0.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "hdk",
  "mockall 0.9.1",
  "paste",
@@ -443,8 +458,7 @@ dependencies = [
 [[package]]
 name = "hdk_derive"
 version = "0.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e95ad74e8283c68c787f0991c3f10283e6c340b559bd075aa6771858d7207097"
+source = "git+https://github.com/holochain/holochain.git?branch=Connoropolous-patch-2#e70979fb1564e6c0b377f8b8a24e791845da8a02"
 dependencies = [
  "holochain_zome_types",
  "paste",
@@ -465,14 +479,13 @@ dependencies = [
 [[package]]
 name = "holo_hash"
 version = "0.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f717b45f366521a8123744764ab72725eec8bc0a884d5ff748da9dd392f15a0a"
+source = "git+https://github.com/holochain/holochain.git?branch=Connoropolous-patch-2#e70979fb1564e6c0b377f8b8a24e791845da8a02"
 dependencies = [
  "arbitrary",
  "base64",
  "blake2b_simd",
  "derive_more",
- "fixt",
+ "fixt 0.0.5 (git+https://github.com/holochain/holochain.git?branch=Connoropolous-patch-2)",
  "futures",
  "holochain_serialized_bytes",
  "must_future",
@@ -536,14 +549,13 @@ dependencies = [
 [[package]]
 name = "holochain_zome_types"
 version = "0.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6b28cd5e06853167618b3fec389e7bfd092293b954974fd1a58e0500cfdf9d5"
+source = "git+https://github.com/holochain/holochain.git?branch=Connoropolous-patch-2#e70979fb1564e6c0b377f8b8a24e791845da8a02"
 dependencies = [
  "arbitrary",
  "chrono",
  "contrafact",
  "derive_builder",
- "fixt",
+ "fixt 0.0.5 (git+https://github.com/holochain/holochain.git?branch=Connoropolous-patch-2)",
  "holo_hash",
  "holochain_serialized_bytes",
  "holochain_wasmer_common",
