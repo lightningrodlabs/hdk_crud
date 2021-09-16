@@ -130,22 +130,21 @@ macro_rules! crud {
           /*
             READ
           */
-          /// This is the exposed/public Zome function for fetching ALL the entries of the type.
-          pub fn [<inner_fetch_ $i s>](get_options: GetOptions) -> ExternResult<[<Vec $crud_type WireEntry>]> {
-            let path_hash = [< get_ $i _path >]().hash()?;
-            let entries = $crate::fetch_links::<$crud_type, [<$crud_type WireEntry>]>(path_hash, get_options)?;
+          /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
+          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::FetchOptions, get_options: GetOptions) -> ExternResult<[<Vec $crud_type WireEntry>]> {
+            let entries = $crate::fetch_entries::<$crud_type, [<$crud_type WireEntry>]>([< get_ $i _path >](), fetch_options, get_options)?;
             Ok([<Vec $crud_type WireEntry>](entries))
           }
           
-          /// This is the exposed/public Zome function for fetching ALL the entries of the type.
+          /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
           /// No signals will be sent as a result of calling this.
           /// Notice that it pluralizes the value of `$i`, the second argument to the crud! macro call.
           #[doc="This just calls [inner_fetch_" $i "s]."]
           #[hdk_extern]
-          pub fn [<fetch_ $i s>](_: ()) -> ExternResult<[<Vec $crud_type WireEntry>]> {
-            [<inner_fetch_ $i s>](GetOptions::latest())
+          pub fn [<fetch_ $i s>](fetch_options: $crate::FetchOptions) -> ExternResult<[<Vec $crud_type WireEntry>]> {
+            [<inner_fetch_ $i s>](fetch_options, GetOptions::latest())
           }
-
+          
           /*
             UPDATE
           */

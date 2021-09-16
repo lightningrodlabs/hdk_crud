@@ -91,3 +91,41 @@ pub fn fetch_links<
         .map(|x| WireEntry::from(x))
         .collect())
 }
+
+pub fn fetch_entries<
+    EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
+    WireEntry: From<EntryAndHash<EntryType>>,
+>(
+    entry_path: Path, // TODO: see if there is a way to derive this from the entry itself (like from entry id)
+    fetch_options: FetchOptions,
+    get_options: GetOptions,
+) -> Result<Vec<WireEntry>, WasmError> {
+    match fetch_options {
+        FetchOptions::All => {
+            let path_hash = entry_path.hash()?;
+            fetch_links::<EntryType, WireEntry>(path_hash, get_options)
+        },
+        FetchOptions::Specific(vec_entry_hash) => {
+            let mut entries = vec![];
+            for entry_hash in vec_entry_hash { // TODO: switch to iter.map?
+                let entry = get_latest_for_entry::<EntryType>(entry_hash.0, get_options.clone());
+                match entry {
+                    Ok(option) => {
+                        match option {
+                            Some(entry_and_hash) => entries.push(WireEntry::from(entry_and_hash)),
+                            None => (),
+                        }
+                    }
+                    _ => (),
+                }
+            }
+            Ok(entries)
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, SerializedBytes)]
+pub enum FetchOptions {
+    All,
+    Specific(Vec<crate::WrappedEntryHash>),
+}
