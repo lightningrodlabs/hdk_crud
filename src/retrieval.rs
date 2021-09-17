@@ -1,4 +1,8 @@
+use std::convert::identity;
+
 use hdk::prelude::*;
+
+use crate::WrappedEntryHash;
 
 /// A triple of an Entry along with the HeaderHash
 /// of that committed entry and the EntryHash of the entry
@@ -87,11 +91,12 @@ pub fn fetch_links<
             get_latest_for_entry::<EntryType>(link.target.clone(), get_options.clone())
         })
         .filter_map(Result::ok)
-        .filter_map(|x| x)
+        .filter_map(identity)
         .map(|x| WireEntry::from(x))
         .collect())
 }
 
+/// Fetch either all entries of a certain type (assuming they are linked to a path) or a specific subset given their entry hashes.
 pub fn fetch_entries<
     EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
     WireEntry: From<EntryAndHash<EntryType>>,
@@ -106,19 +111,14 @@ pub fn fetch_entries<
             fetch_links::<EntryType, WireEntry>(path_hash, get_options)
         },
         FetchOptions::Specific(vec_entry_hash) => {
-            let mut entries = vec![];
-            for entry_hash in vec_entry_hash { // TODO: switch to iter.map?
-                let entry = get_latest_for_entry::<EntryType>(entry_hash.0, get_options.clone());
-                match entry {
-                    Ok(option) => {
-                        match option {
-                            Some(entry_and_hash) => entries.push(WireEntry::from(entry_and_hash)),
-                            None => (),
-                        }
-                    }
-                    _ => (),
-                }
-            }
+            let entries = vec_entry_hash.iter()
+                .map(|entry_hash| get_latest_for_entry::<EntryType>(entry_hash.0.clone(), get_options.clone()))
+                // drop Err(_) and unwraps Ok(_)
+                .filter_map(Result::ok)
+                // drop None and unwraps Some(_)
+                .filter_map(identity)
+                .map(|x| WireEntry::from(x))
+                .collect();
             Ok(entries)
         }
     }
@@ -127,5 +127,5 @@ pub fn fetch_entries<
 #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 pub enum FetchOptions {
     All,
-    Specific(Vec<crate::WrappedEntryHash>),
+    Specific(Vec<WrappedEntryHash>),
 }
