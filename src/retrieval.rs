@@ -1,8 +1,7 @@
 use std::convert::identity;
 
+use hdk::prelude::holo_hash::EntryHashB64;
 use hdk::prelude::*;
-
-use crate::WrappedEntryHash;
 
 /// A triple of an Entry along with the HeaderHash
 /// of that committed entry and the EntryHash of the entry
@@ -79,11 +78,11 @@ pub fn get_latest_for_entry<T: TryFrom<SerializedBytes, Error = SerializedBytesE
 /// that the contents for each entry returned are automatically the latest contents.
 pub fn fetch_links<
     EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
-    WireEntry: From<EntryAndHash<EntryType>>,
+    WireElement: From<EntryAndHash<EntryType>>,
 >(
     entry_hash: EntryHash,
     get_options: GetOptions,
-) -> Result<Vec<WireEntry>, WasmError> {
+) -> Result<Vec<WireElement>, WasmError> {
     Ok(get_links(entry_hash, None)?
         .into_inner()
         .into_iter()
@@ -92,32 +91,38 @@ pub fn fetch_links<
         })
         .filter_map(Result::ok)
         .filter_map(identity)
-        .map(|x| WireEntry::from(x))
+        .map(|x| WireElement::from(x))
         .collect())
 }
 
 /// Fetch either all entries of a certain type (assuming they are linked to a path) or a specific subset given their entry hashes.
 pub fn fetch_entries<
     EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
-    WireEntry: From<EntryAndHash<EntryType>>,
+    WireElement: From<EntryAndHash<EntryType>>,
 >(
     entry_path: Path, // TODO: see if there is a way to derive this from the entry itself (like from entry id)
     fetch_options: FetchOptions,
     get_options: GetOptions,
-) -> Result<Vec<WireEntry>, WasmError> {
+) -> Result<Vec<WireElement>, WasmError> {
     match fetch_options {
         FetchOptions::All => {
             let path_hash = entry_path.hash()?;
-            fetch_links::<EntryType, WireEntry>(path_hash, get_options)
-        },
+            fetch_links::<EntryType, WireElement>(path_hash, get_options)
+        }
         FetchOptions::Specific(vec_entry_hash) => {
-            let entries = vec_entry_hash.iter()
-                .map(|entry_hash| get_latest_for_entry::<EntryType>(entry_hash.0.clone(), get_options.clone()))
+            let entries = vec_entry_hash
+                .iter()
+                .map(|entry_hash| {
+                    get_latest_for_entry::<EntryType>(
+                        entry_hash.clone().into(),
+                        get_options.clone(),
+                    )
+                })
                 // drop Err(_) and unwraps Ok(_)
                 .filter_map(Result::ok)
                 // drop None and unwraps Some(_)
                 .filter_map(identity)
-                .map(|x| WireEntry::from(x))
+                .map(|x| WireElement::from(x))
                 .collect();
             Ok(entries)
         }
@@ -127,5 +132,5 @@ pub fn fetch_entries<
 #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 pub enum FetchOptions {
     All,
-    Specific(Vec<WrappedEntryHash>),
+    Specific(Vec<EntryHashB64>),
 }

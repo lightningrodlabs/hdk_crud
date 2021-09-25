@@ -29,7 +29,7 @@
 ///     test,
 ///     "test",
 ///     get_peers,
-///     convert_to_receiver_signal
+///     convert_to_receiver_signal,
 /// );
 /// ```
 #[macro_export]
@@ -52,20 +52,21 @@ macro_rules! crud {
           #[doc = "This data structure will be very broadly useful and represents
           how an entry should be serialized along with what metadata to
           form a consistent pattern that the UI or client can expect.
-          It is called `" $crud_type "WireEntry` because it is how data looks passed
+          It is called `" $crud_type "WireElement` because it is how data looks passed
           'over the wire' or network."]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
-          pub struct [<$crud_type WireEntry>] {
+          #[serde(rename_all = "camelCase")]
+          pub struct [<$crud_type WireElement>] {
             pub entry: $crud_type,
-            pub address: $crate::WrappedHeaderHash,
-            pub entry_address: $crate::WrappedEntryHash
+            pub header_hash: ::hdk::prelude::holo_hash::HeaderHashB64,
+            pub entry_hash: ::hdk::prelude::holo_hash::EntryHashB64
           }
-          impl From<$crate::EntryAndHash<$crud_type>> for [<$crud_type WireEntry>] {
+          impl From<$crate::EntryAndHash<$crud_type>> for [<$crud_type WireElement>] {
             fn from(entry_and_hash: $crate::EntryAndHash<$crud_type>) -> Self {
-              [<$crud_type WireEntry>] {
+              [<$crud_type WireElement>] {
                 entry: entry_and_hash.0,
-                address: $crate::WrappedHeaderHash(entry_and_hash.1),
-                entry_address: $crate::WrappedEntryHash(entry_and_hash.2)
+                header_hash: ::hdk::prelude::holo_hash::HeaderHashB64::new(entry_and_hash.1),
+                entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_and_hash.2)
               }
             }
           }
@@ -75,15 +76,11 @@ macro_rules! crud {
 
           #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
+          #[serde(rename_all = "camelCase")]
           pub struct [<$crud_type UpdateInput>] {
             pub entry: $crud_type,
-            pub address: $crate::WrappedHeaderHash,
+            pub header_hash: ::hdk::prelude::holo_hash::HeaderHashB64,
           }
-
-          #[doc ="This is what will be returned by a call to [fetch_" $path "s] or [inner_fetch_" $path "s] 
-          It is just a list/vec of [" $crud_type "WireEntry]. It is defined for the purposes of serialization."]
-          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
-          pub struct [<Vec $crud_type WireEntry>](pub Vec<[<$crud_type WireEntry>]>);
 
           /*
             CREATE
@@ -92,17 +89,17 @@ macro_rules! crud {
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This will be called with `send_signal` as `true` by [create_" $i "]"]
-          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<[<$crud_type WireEntry>]> {
+          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<[<$crud_type WireElement>]> {
             let address = create_entry(&entry)?;
             let entry_hash = hash_entry(&entry)?;
             let path = [< get_ $i _path >]();
             path.ensure()?;
             let path_hash = path.hash()?;
             create_link(path_hash, entry_hash.clone(), ())?;
-            let wire_entry = [<$crud_type WireEntry>] {
+            let wire_entry = [<$crud_type WireElement>] {
               entry,
-              address: $crate::WrappedHeaderHash(address),
-              entry_address: $crate::WrappedEntryHash(entry_hash)
+              header_hash: ::hdk::prelude::holo_hash::HeaderHashB64::new(address),
+              entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
             };
             if (send_signal) {
               let signal = $convert_to_receiver_signal([<$crud_type Signal>] {
@@ -117,13 +114,14 @@ macro_rules! crud {
             Ok(wire_entry)
           }
 
+          #[cfg(feature = "expose_zome_fns")]
           /// This is the exposed/public Zome function for creating an entry of this type.
           /// This will create an entry and link it off the main Path.
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This just calls [inner_create_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<[<$crud_type WireEntry>]> {
+          pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<[<$crud_type WireElement>]> {
             [<inner_create_ $i>](entry, true)
           }
 
@@ -131,33 +129,34 @@ macro_rules! crud {
             READ
           */
           /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
-          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::FetchOptions, get_options: GetOptions) -> ExternResult<[<Vec $crud_type WireEntry>]> {
-            let entries = $crate::fetch_entries::<$crud_type, [<$crud_type WireEntry>]>([< get_ $i _path >](), fetch_options, get_options)?;
-            Ok([<Vec $crud_type WireEntry>](entries))
+          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::FetchOptions, get_options: GetOptions) -> ExternResult<Vec<[<$crud_type WireElement>]>> {
+            let entries = $crate::fetch_entries::<$crud_type, [<$crud_type WireElement>]>([< get_ $i _path >](), fetch_options, get_options)?;
+            Ok(entries)
           }
-          
+
+          #[cfg(feature = "expose_zome_fns")]
           /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
           /// No signals will be sent as a result of calling this.
           /// Notice that it pluralizes the value of `$i`, the second argument to the crud! macro call.
           #[doc="This just calls [inner_fetch_" $i "s]."]
           #[hdk_extern]
-          pub fn [<fetch_ $i s>](fetch_options: $crate::FetchOptions) -> ExternResult<[<Vec $crud_type WireEntry>]> {
+          pub fn [<fetch_ $i s>](fetch_options: $crate::FetchOptions) -> ExternResult<Vec<[<$crud_type WireElement>]>> {
             [<inner_fetch_ $i s>](fetch_options, GetOptions::latest())
           }
-          
+
           /*
             UPDATE
           */
           /// This will add an update to an entry.
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<[<$crud_type WireEntry>]> {
-            update_entry(update.address.0.clone(), &update.entry)?;
+          pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<[<$crud_type WireElement>]> {
+            update_entry(update.header_hash.clone().into(), &update.entry)?;
             let entry_address = hash_entry(&update.entry)?;
-            let wire_entry = [<$crud_type WireEntry>] {
+            let wire_entry = [<$crud_type WireElement>] {
                 entry: update.entry,
-                address: update.address,
-                entry_address: $crate::WrappedEntryHash(entry_address)
+                header_hash: update.header_hash,
+                entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_address)
             };
             if (send_signal) {
               let signal = $convert_to_receiver_signal([<$crud_type Signal>] {
@@ -172,13 +171,14 @@ macro_rules! crud {
             Ok(wire_entry)
           }
 
+          #[cfg(feature = "expose_zome_fns")]
           /// This is the exposed/public Zome function for creating an entry of this type.
           /// This will add an update to an entry.
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This just calls [inner_update_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<[<$crud_type WireEntry>]> {
+          pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<[<$crud_type WireElement>]> {
             [<inner_update_ $i>](update, true)
           }
 
@@ -190,8 +190,8 @@ macro_rules! crud {
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This will be called with `send_signal` as `true` by [archive_" $i "]"]
-          pub fn [<inner_archive_ $i>](address: $crate::WrappedHeaderHash, send_signal: bool) -> ExternResult<$crate::WrappedHeaderHash> {
-            delete_entry(address.0.clone())?;
+          pub fn [<inner_archive_ $i>](address: ::hdk::prelude::holo_hash::HeaderHashB64, send_signal: bool) -> ExternResult<::hdk::prelude::holo_hash::HeaderHashB64> {
+            delete_entry(address.clone().into())?;
             if (send_signal) {
               let signal = $convert_to_receiver_signal([<$crud_type Signal>] {
                 entry_type: $path.to_string(),
@@ -205,6 +205,7 @@ macro_rules! crud {
             Ok(address)
           }
 
+          #[cfg(feature = "expose_zome_fns")]
           /// This is the exposed/public Zome function for archiving an entry of this type.
           /// This will mark the entry at `address` as "deleted".
           #[doc="It will no longer be returned by [fetch_" $i "s]."]
@@ -212,7 +213,7 @@ macro_rules! crud {
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This just calls [inner_archive_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<archive_ $i>](address: $crate::WrappedHeaderHash) -> ExternResult<$crate::WrappedHeaderHash> {
+          pub fn [<archive_ $i>](address: ::hdk::prelude::holo_hash::HeaderHashB64) -> ExternResult<::hdk::prelude::holo_hash::HeaderHashB64> {
             [<inner_archive_ $i>](address, true)
           }
         }
@@ -247,15 +248,15 @@ pub mod example {
     // untagged because the useful tagging is done internally on the *Signal objects
     #[serde(untagged)]
     pub enum SignalTypes {
-        Example(ExampleSignal)
+        Example(ExampleSignal),
     }
 
     /// NOT GENERATED
     /// Signal Receiver
     /// (forwards signals to the UI)
-    /// would be handling a 
+    /// would be handling a
     pub fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
-      Ok(emit_signal(&signal)?)
+        Ok(emit_signal(&signal)?)
     }
 
     /// NOT GENERATED

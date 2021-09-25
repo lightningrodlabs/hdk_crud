@@ -74,9 +74,9 @@ macro_rules! signal_types {
           // as the tag and action
           #[serde(untagged)]
           pub enum [<$crud_type SignalData>] {
-            Create([<$crud_type WireEntry>]),
-            Update([<$crud_type WireEntry>]),
-            Delete($crate::WrappedHeaderHash),
+            Create([<$crud_type WireElement>]),
+            Update([<$crud_type WireElement>]),
+            Delete(::hdk::prelude::holo_hash::HeaderHashB64),
           }
 
           /// This will be used to send data events as signals to the UI. All
@@ -85,6 +85,7 @@ macro_rules! signal_types {
           /// that matches the variant for `action`. So if `action` is variant [ActionType::Create](crate::ActionType::Create)
           #[doc = " then `data` should be [" $crud_type "SignalData::Create]."]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
+          #[serde(rename_all = "camelCase")]
           pub struct [<$crud_type Signal>] {
             pub entry_type: String,
             pub action: $crate::ActionType,
