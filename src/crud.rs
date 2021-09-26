@@ -37,7 +37,6 @@ macro_rules! crud {
     (
       $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $convert_to_receiver_signal:ident
     ) => {
-        use $crate::wire_element::WireElement;
         ::paste::paste! {
           /// This is the &str that can be passed into Path to
           /// find all the entries created using these create functions
@@ -49,17 +48,6 @@ macro_rules! crud {
           pub fn [<get_ $i _path>]() -> Path {
             Path::from([<$i:upper _PATH>])
           }
-
-
-          // impl From<$crate::retrieval::EntryAndHash<$crud_type>> for WireElement<[<$crud_type>]> {
-          //   fn from(entry_and_hash: $crate::EntryAndHash<$crud_type>) -> Self {
-          //     WireElement {
-          //       entry: entry_and_hash.0,
-          //       header_hash: ::hdk::prelude::holo_hash::HeaderHashB64::new(entry_and_hash.1),
-          //       entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_and_hash.2)
-          //     }
-          //   }
-          // }
 
           #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
@@ -76,14 +64,14 @@ macro_rules! crud {
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This will be called with `send_signal` as `true` by [create_" $i "]"]
-          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<WireElement<[<$crud_type>]>> {
+          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
             let address = create_entry(&entry)?;
             let entry_hash = hash_entry(&entry)?;
             let path = [< get_ $i _path >]();
             path.ensure()?;
             let path_hash = path.hash()?;
             create_link(path_hash, entry_hash.clone(), ())?;
-            let wire_entry: WireElement<[<$crud_type>]> = WireElement {
+            let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
               entry,
               header_hash: ::hdk::prelude::holo_hash::HeaderHashB64::new(address),
               entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
@@ -109,7 +97,7 @@ macro_rules! crud {
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This just calls [inner_create_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<WireElement<[<$crud_type>]>> {
+          pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
             [<inner_create_ $i>](entry, true)
           }
 
@@ -117,7 +105,7 @@ macro_rules! crud {
             READ
           */
           /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
-          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::retrieval::FetchOptions, get_options: GetOptions) -> ExternResult<Vec<WireElement<[<$crud_type>]>>> {
+          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::retrieval::FetchOptions, get_options: GetOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
             let entries = $crate::retrieval::fetch_entries::<$crud_type>([< get_ $i _path >](), fetch_options, get_options)?;
             Ok(entries)
           }
@@ -128,7 +116,7 @@ macro_rules! crud {
           /// Notice that it pluralizes the value of `$i`, the second argument to the crud! macro call.
           #[doc="This just calls [inner_fetch_" $i "s]."]
           #[hdk_extern]
-          pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::FetchOptions) -> ExternResult<Vec<WireElement<[<$crud_type>]>>> {
+          pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::FetchOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
             [<inner_fetch_ $i s>](fetch_options, GetOptions::latest())
           }
 
@@ -138,10 +126,10 @@ macro_rules! crud {
           /// This will add an update to an entry.
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<WireElement<[<$crud_type>]>> {
+          pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
             update_entry(update.header_hash.clone().into(), &update.entry)?;
             let entry_address = hash_entry(&update.entry)?;
-            let wire_entry: WireElement<[<$crud_type>]> = WireElement {
+            let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
                 entry: update.entry,
                 header_hash: update.header_hash,
                 entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_address)
@@ -167,7 +155,7 @@ macro_rules! crud {
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This just calls [inner_update_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<WireElement<[<$crud_type>]>> {
+          pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
             [<inner_update_ $i>](update, true)
           }
 
