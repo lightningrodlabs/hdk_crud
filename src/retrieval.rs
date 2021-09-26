@@ -3,6 +3,8 @@ use std::convert::identity;
 use hdk::prelude::holo_hash::EntryHashB64;
 use hdk::prelude::*;
 
+use crate::wire_element::WireElement;
+
 /// A triple of an Entry along with the HeaderHash
 /// of that committed entry and the EntryHash of the entry
 pub type EntryAndHash<T> = (T, HeaderHash, EntryHash);
@@ -78,11 +80,10 @@ pub fn get_latest_for_entry<T: TryFrom<SerializedBytes, Error = SerializedBytesE
 /// that the contents for each entry returned are automatically the latest contents.
 pub fn fetch_links<
     EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
-    WireElement: From<EntryAndHash<EntryType>>,
 >(
     entry_hash: EntryHash,
     get_options: GetOptions,
-) -> Result<Vec<WireElement>, WasmError> {
+) -> Result<Vec<WireElement<EntryType>>, WasmError> {
     Ok(get_links(entry_hash, None)?
         .into_inner()
         .into_iter()
@@ -98,16 +99,15 @@ pub fn fetch_links<
 /// Fetch either all entries of a certain type (assuming they are linked to a path) or a specific subset given their entry hashes.
 pub fn fetch_entries<
     EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
-    WireElement: From<EntryAndHash<EntryType>>,
 >(
     entry_path: Path, // TODO: see if there is a way to derive this from the entry itself (like from entry id)
     fetch_options: FetchOptions,
     get_options: GetOptions,
-) -> Result<Vec<WireElement>, WasmError> {
+) -> Result<Vec<WireElement<EntryType>>, WasmError> {
     match fetch_options {
         FetchOptions::All => {
             let path_hash = entry_path.hash()?;
-            fetch_links::<EntryType, WireElement>(path_hash, get_options)
+            fetch_links::<EntryType>(path_hash, get_options)
         }
         FetchOptions::Specific(vec_entry_hash) => {
             let entries = vec_entry_hash

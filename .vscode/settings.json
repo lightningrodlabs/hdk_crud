@@ -1,7 +1,6 @@
 {
   "rust-analyzer.checkOnSave.features": null,
   "rust-analyzer.cargo.features": [
-    "mock",
-    "expose_zome_fns"
+    "mock"
   ]
 }

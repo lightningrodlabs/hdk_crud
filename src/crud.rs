@@ -37,6 +37,7 @@ macro_rules! crud {
     (
       $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $convert_to_receiver_signal:ident
     ) => {
+        use $crate::wire_element::WireElement;
         ::paste::paste! {
           /// This is the &str that can be passed into Path to
           /// find all the entries created using these create functions
@@ -49,30 +50,16 @@ macro_rules! crud {
             Path::from([<$i:upper _PATH>])
           }
 
-          #[doc = "This data structure will be very broadly useful and represents
-          how an entry should be serialized along with what metadata to
-          form a consistent pattern that the UI or client can expect.
-          It is called `" $crud_type "WireElement` because it is how data looks passed
-          'over the wire' or network."]
-          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
-          #[serde(rename_all = "camelCase")]
-          pub struct [<$crud_type WireElement>] {
-            pub entry: $crud_type,
-            pub header_hash: ::hdk::prelude::holo_hash::HeaderHashB64,
-            pub entry_hash: ::hdk::prelude::holo_hash::EntryHashB64
-          }
-          impl From<$crate::EntryAndHash<$crud_type>> for [<$crud_type WireElement>] {
-            fn from(entry_and_hash: $crate::EntryAndHash<$crud_type>) -> Self {
-              [<$crud_type WireElement>] {
-                entry: entry_and_hash.0,
-                header_hash: ::hdk::prelude::holo_hash::HeaderHashB64::new(entry_and_hash.1),
-                entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_and_hash.2)
-              }
-            }
-          }
 
-          // expand the special types for Signals
-          $crate::signal_types!($crud_type);
+          // impl From<$crate::retrieval::EntryAndHash<$crud_type>> for WireElement<[<$crud_type>]> {
+          //   fn from(entry_and_hash: $crate::EntryAndHash<$crud_type>) -> Self {
+          //     WireElement {
+          //       entry: entry_and_hash.0,
+          //       header_hash: ::hdk::prelude::holo_hash::HeaderHashB64::new(entry_and_hash.1),
+          //       entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_and_hash.2)
+          //     }
+          //   }
+          // }
 
           #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
@@ -89,24 +76,25 @@ macro_rules! crud {
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This will be called with `send_signal` as `true` by [create_" $i "]"]
-          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<[<$crud_type WireElement>]> {
+          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<WireElement<[<$crud_type>]>> {
             let address = create_entry(&entry)?;
             let entry_hash = hash_entry(&entry)?;
             let path = [< get_ $i _path >]();
             path.ensure()?;
             let path_hash = path.hash()?;
             create_link(path_hash, entry_hash.clone(), ())?;
-            let wire_entry = [<$crud_type WireElement>] {
+            let wire_entry: WireElement<[<$crud_type>]> = WireElement {
               entry,
               header_hash: ::hdk::prelude::holo_hash::HeaderHashB64::new(address),
               entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
             };
             if (send_signal) {
-              let signal = $convert_to_receiver_signal([<$crud_type Signal>] {
+              let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
                 entry_type: $path.to_string(),
-                action: $crate::ActionType::Create,
-                data: [<$crud_type SignalData>]::Create(wire_entry.clone()),
-              });
+                action: $crate::signals::ActionType::Create,
+                data: $crate::signals::SignalData::Create::<[<$crud_type>]>(wire_entry.clone()),
+              };
+              let signal = $convert_to_receiver_signal(action_signal);
               let payload = ExternIO::encode(signal)?;
               let peers = $get_peers()?;
               remote_signal(payload, peers)?;
@@ -121,7 +109,7 @@ macro_rules! crud {
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This just calls [inner_create_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<[<$crud_type WireElement>]> {
+          pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<WireElement<[<$crud_type>]>> {
             [<inner_create_ $i>](entry, true)
           }
 
@@ -129,8 +117,8 @@ macro_rules! crud {
             READ
           */
           /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
-          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::FetchOptions, get_options: GetOptions) -> ExternResult<Vec<[<$crud_type WireElement>]>> {
-            let entries = $crate::fetch_entries::<$crud_type, [<$crud_type WireElement>]>([< get_ $i _path >](), fetch_options, get_options)?;
+          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::retrieval::FetchOptions, get_options: GetOptions) -> ExternResult<Vec<WireElement<[<$crud_type>]>>> {
+            let entries = $crate::retrieval::fetch_entries::<$crud_type>([< get_ $i _path >](), fetch_options, get_options)?;
             Ok(entries)
           }
 
@@ -140,7 +128,7 @@ macro_rules! crud {
           /// Notice that it pluralizes the value of `$i`, the second argument to the crud! macro call.
           #[doc="This just calls [inner_fetch_" $i "s]."]
           #[hdk_extern]
-          pub fn [<fetch_ $i s>](fetch_options: $crate::FetchOptions) -> ExternResult<Vec<[<$crud_type WireElement>]>> {
+          pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::FetchOptions) -> ExternResult<Vec<WireElement<[<$crud_type>]>>> {
             [<inner_fetch_ $i s>](fetch_options, GetOptions::latest())
           }
 
@@ -150,20 +138,21 @@ macro_rules! crud {
           /// This will add an update to an entry.
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<[<$crud_type WireElement>]> {
+          pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<WireElement<[<$crud_type>]>> {
             update_entry(update.header_hash.clone().into(), &update.entry)?;
             let entry_address = hash_entry(&update.entry)?;
-            let wire_entry = [<$crud_type WireElement>] {
+            let wire_entry: WireElement<[<$crud_type>]> = WireElement {
                 entry: update.entry,
                 header_hash: update.header_hash,
                 entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_address)
             };
             if (send_signal) {
-              let signal = $convert_to_receiver_signal([<$crud_type Signal>] {
+              let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
                 entry_type: $path.to_string(),
-                action: $crate::ActionType::Update,
-                data: [<$crud_type SignalData>]::Update(wire_entry.clone()),
-              });
+                action: $crate::signals::ActionType::Update,
+                data: $crate::signals::SignalData::Update(wire_entry.clone()),
+              };
+              let signal = $convert_to_receiver_signal(action_signal);
               let payload = ExternIO::encode(signal)?;
               let peers = $get_peers()?;
               remote_signal(payload, peers)?;
@@ -178,7 +167,7 @@ macro_rules! crud {
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This just calls [inner_update_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<[<$crud_type WireElement>]> {
+          pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<WireElement<[<$crud_type>]>> {
             [<inner_update_ $i>](update, true)
           }
 
@@ -193,11 +182,12 @@ macro_rules! crud {
           pub fn [<inner_archive_ $i>](address: ::hdk::prelude::holo_hash::HeaderHashB64, send_signal: bool) -> ExternResult<::hdk::prelude::holo_hash::HeaderHashB64> {
             delete_entry(address.clone().into())?;
             if (send_signal) {
-              let signal = $convert_to_receiver_signal([<$crud_type Signal>] {
+              let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
                 entry_type: $path.to_string(),
-                action: $crate::ActionType::Delete,
-                data: [<$crud_type SignalData>]::Delete(address.clone()),
-              });
+                action: $crate::signals::ActionType::Delete,
+                data: $crate::signals::SignalData::Delete::<[<$crud_type>]>(address.clone()),
+              };
+              let signal = $convert_to_receiver_signal(action_signal);
               let payload = ExternIO::encode(signal)?;
               let peers = $get_peers()?;
               remote_signal(payload, peers)?;
@@ -230,6 +220,7 @@ macro_rules! crud {
 /// and call elsewhere. The 4 Zome functions in this example would be:
 /// [create_example](example::create_example), [fetch_examples](example::create_example), [update_example](example::create_example), and [archive_example](example::create_example).
 pub mod example {
+    use crate::signals::*;
     use hdk::prelude::*;
 
     /// NOT GENERATED
@@ -245,10 +236,10 @@ pub mod example {
     /// A high level signal type to unify all the entry type specific
     /// signal types
     #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
-    // untagged because the useful tagging is done internally on the *Signal objects
+    // untagged because the useful tagging is done internally on the ActionSignal objects
     #[serde(untagged)]
     pub enum SignalTypes {
-        Example(ExampleSignal),
+        Example(ActionSignal<Example>),
     }
 
     /// NOT GENERATED
@@ -264,7 +255,7 @@ pub mod example {
     /// to some slightly modified type that it should be sent over the
     /// wire as. It is sort of like a pre-signal-fire hook
     /// presenting the chance to do type conversion
-    pub fn convert_to_receiver_signal(signal: ExampleSignal) -> SignalTypes {
+    pub fn convert_to_receiver_signal(signal: ActionSignal<Example>) -> SignalTypes {
         SignalTypes::Example(signal)
     }
 

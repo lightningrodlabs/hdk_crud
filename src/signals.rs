@@ -1,5 +1,8 @@
+use hdk::prelude::holo_hash::HeaderHashB64;
 use hdk::prelude::*;
 use std::fmt;
+
+use crate::wire_element::WireElement;
 
 /// when sending signals, distinguish
 /// between "create", "update", and "delete" actions
@@ -54,45 +57,33 @@ pub fn create_receive_signal_cap_grant() -> ExternResult<()> {
     Ok(())
 }
 
-/// Create 2 special types from an existing type
-/// that are optimized as a data structure for sending signals
-/// to a UI or client that relate to core Holochain actions for
-/// entry types: Create, Update, and Delete
-#[macro_export]
-macro_rules! signal_types {
-    (
-      $crud_type:ident
-    ) => {
-        ::paste::paste! {
-          /// Distinguishes between what data structures should be passed
-          /// to the UI based on different action types, like create/update/delete
-          /// this will be used to send these data structures as signals to the UI
-          /// When Create/Update, we will pass the actual new Entry
-          /// but when doing Delete we will naturally only pass the HeaderHash
-          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
-          // untagged because the useful tagging is done externally on the *Signal object
-          // as the tag and action
-          #[serde(untagged)]
-          pub enum [<$crud_type SignalData>] {
-            Create([<$crud_type WireElement>]),
-            Update([<$crud_type WireElement>]),
-            Delete(::hdk::prelude::holo_hash::HeaderHashB64),
-          }
+/// Distinguishes between what data structures should be passed
+/// to the UI based on different action types, like create/update/delete
+/// this will be used to send these data structures as signals to the UI
+/// When Create/Update, we will pass the actual new Entry
+/// but when doing Delete we will naturally only pass the HeaderHash
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+// untagged because the useful tagging is done externally on the *Signal object
+// as the tag and action
+#[serde(untagged)]
+pub enum SignalData<T> {
+    Create(WireElement<T>),
+    Update(WireElement<T>),
+    Delete(HeaderHashB64),
+}
 
-          /// This will be used to send data events as signals to the UI. All
-          /// signals relating to the entry type will share this high level structure, creating consistency.
-          /// The `data` field should use the variant (Create/Update/Delete)
-          /// that matches the variant for `action`. So if `action` is variant [ActionType::Create](crate::ActionType::Create)
-          #[doc = " then `data` should be [" $crud_type "SignalData::Create]."]
-          #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
-          #[serde(rename_all = "camelCase")]
-          pub struct [<$crud_type Signal>] {
-            pub entry_type: String,
-            pub action: $crate::ActionType,
-            pub data: [<$crud_type SignalData>],
-          }
-        }
-    };
+/// This will be used to send data events as signals to the UI. All
+/// signals relating to the entry type will share this high level structure, creating consistency.
+/// The `data` field should use the variant (Create/Update/Delete)
+/// that matches the variant for `action`. So if `action` is variant [ActionType::Create](crate::signals::ActionType::Create)
+#[doc = " then `data` should be `SignalData::Create`."]
+/// It serializes with camelCase style replacement of underscores in object keys.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ActionSignal<T> {
+    pub entry_type: String,
+    pub action: ActionType,
+    pub data: SignalData<T>,
 }
 
 #[cfg(test)]
