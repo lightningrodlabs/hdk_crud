@@ -114,7 +114,7 @@ macro_rules! crud {
             Ok(wire_entry)
           }
 
-          #[cfg(feature = "expose_zome_fns")]
+          #[cfg(not(feature = "exclude_zome_fns"))]
           /// This is the exposed/public Zome function for creating an entry of this type.
           /// This will create an entry and link it off the main Path.
           /// It will send a signal of this event
@@ -134,7 +134,7 @@ macro_rules! crud {
             Ok(entries)
           }
 
-          #[cfg(feature = "expose_zome_fns")]
+          #[cfg(not(feature = "exclude_zome_fns"))]
           /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
           /// No signals will be sent as a result of calling this.
           /// Notice that it pluralizes the value of `$i`, the second argument to the crud! macro call.
@@ -171,7 +171,7 @@ macro_rules! crud {
             Ok(wire_entry)
           }
 
-          #[cfg(feature = "expose_zome_fns")]
+          #[cfg(not(feature = "exclude_zome_fns"))]
           /// This is the exposed/public Zome function for creating an entry of this type.
           /// This will add an update to an entry.
           /// It will send a signal of this event
@@ -205,7 +205,7 @@ macro_rules! crud {
             Ok(address)
           }
 
-          #[cfg(feature = "expose_zome_fns")]
+          #[cfg(not(feature = "exclude_zome_fns"))]
           /// This is the exposed/public Zome function for archiving an entry of this type.
           /// This will mark the entry at `address` as "deleted".
           #[doc="It will no longer be returned by [fetch_" $i "s]."]
