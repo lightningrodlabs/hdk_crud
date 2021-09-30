@@ -114,7 +114,7 @@ mod tests {
                 access: ().into(),
                 functions,
             }),
-            ChainTopOrdering::Relaxed
+            ChainTopOrdering::Strict
         );
         let header_hash = fixt!(HeaderHash);
         mock_hdk
