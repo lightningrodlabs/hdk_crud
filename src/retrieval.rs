@@ -1,6 +1,6 @@
 use std::convert::identity;
 
-use hdk::prelude::holo_hash::EntryHashB64;
+use holo_hash::EntryHashB64;
 use hdk::prelude::*;
 
 use crate::wire_element::WireElement;
@@ -40,7 +40,7 @@ pub fn get_latest_for_entry<T: TryFrom<SerializedBytes, Error = SerializedBytesE
                 _ => {
                     let mut sortlist = details.updates.to_vec();
                     // unix timestamp should work for sorting
-                    sortlist.sort_by_key(|update| update.header().timestamp().0);
+                    sortlist.sort_by_key(|update| update.header().timestamp().as_millis());
                     // sorts in ascending order, so take the last element
                     let last = sortlist.last().unwrap().to_owned();
                     Some(get_header_hash(last))

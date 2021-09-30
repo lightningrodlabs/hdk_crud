@@ -1,4 +1,4 @@
-use hdk::prelude::holo_hash::HeaderHashB64;
+use holo_hash::HeaderHashB64;
 use hdk::prelude::*;
 use std::fmt;
 
@@ -106,7 +106,7 @@ mod tests {
         // create_cap_grant calls just `create` under the hood
         let mut functions: GrantedFunctions = BTreeSet::new();
         functions.insert((zome_info.zome_name, "recv_remote_signal".into()));
-        let expected = EntryWithDefId::new(
+        let expected = CreateInput::new(
             EntryDefId::CapGrant,
             Entry::CapGrant(CapGrantEntry {
                 tag: "".into(),
@@ -114,6 +114,7 @@ mod tests {
                 access: ().into(),
                 functions,
             }),
+            ChainTopOrdering::Relaxed
         );
         let header_hash = fixt!(HeaderHash);
         mock_hdk

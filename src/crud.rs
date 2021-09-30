@@ -54,7 +54,7 @@ macro_rules! crud {
           #[serde(rename_all = "camelCase")]
           pub struct [<$crud_type UpdateInput>] {
             pub entry: $crud_type,
-            pub header_hash: ::hdk::prelude::holo_hash::HeaderHashB64,
+            pub header_hash: ::holo_hash::HeaderHashB64,
           }
 
           /*
@@ -73,7 +73,7 @@ macro_rules! crud {
             create_link(path_hash, entry_hash.clone(), ())?;
             let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
               entry,
-              header_hash: ::hdk::prelude::holo_hash::HeaderHashB64::new(address),
+              header_hash: ::holo_hash::HeaderHashB64::new(address),
               entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
             };
             if (send_signal) {
@@ -167,7 +167,7 @@ macro_rules! crud {
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This will be called with `send_signal` as `true` by [archive_" $i "]"]
-          pub fn [<inner_archive_ $i>](address: ::hdk::prelude::holo_hash::HeaderHashB64, send_signal: bool) -> ExternResult<::hdk::prelude::holo_hash::HeaderHashB64> {
+          pub fn [<inner_archive_ $i>](address: ::holo_hash::HeaderHashB64, send_signal: bool) -> ExternResult<::holo_hash::HeaderHashB64> {
             delete_entry(address.clone().into())?;
             if (send_signal) {
               let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
@@ -191,7 +191,7 @@ macro_rules! crud {
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This just calls [inner_archive_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<archive_ $i>](address: ::hdk::prelude::holo_hash::HeaderHashB64) -> ExternResult<::hdk::prelude::holo_hash::HeaderHashB64> {
+          pub fn [<archive_ $i>](address: ::holo_hash::HeaderHashB64) -> ExternResult<::holo_hash::HeaderHashB64> {
             [<inner_archive_ $i>](address, true)
           }
         }

@@ -1,4 +1,4 @@
-use hdk::prelude::holo_hash::{EntryHashB64, HeaderHashB64};
+use holo_hash::{EntryHashB64, HeaderHashB64};
 use hdk::prelude::*;
 
 use crate::retrieval::EntryAndHash;
