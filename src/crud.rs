@@ -32,21 +32,34 @@
 ///     convert_to_receiver_signal,
 /// );
 /// ```
+
+
 #[macro_export]
 macro_rules! crud {
     (
       $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $convert_to_receiver_signal:ident
     ) => {
         ::paste::paste! {
+          use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
+          
           /// This is the &str that can be passed into Path to
           /// find all the entries created using these create functions
           /// which are linked off of this Path.
           pub const [<$i:upper _PATH>]: &str = $path;
+          // pub const [<$i:upper _CREATE_TIME>]: &str = format!("{}_create_time", [<$i:upper _PATH>].to_string()); 
 
           /// Retrieve the Path for these entry types
           /// to which all entries are linked
           pub fn [<get_ $i _path>]() -> Path {
             Path::from([<$i:upper _PATH>])
+          }
+
+          fn now_date_time() -> ExternResult<DateTime<Utc>> {
+              let time = sys_time()?.as_seconds_and_nanos();
+
+              let date: DateTime<Utc> =
+                  DateTime::from_utc(NaiveDateTime::from_timestamp(time.0, time.1), Utc);
+              Ok(date)
           }
 
           #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
@@ -71,6 +84,21 @@ macro_rules! crud {
             path.ensure()?;
             let path_hash = path.hash()?;
             create_link(path_hash, entry_hash.clone(), ())?;
+
+            // create a time_path
+            let date = now_date_time()?;
+            let time_path = Path::from(format!(
+                "{}_create_time.{}-{}-{}.{}",
+                $path,
+                date.year(),
+                date.month(),
+                date.day(),
+                date.hour()
+            ));
+
+            time_path.ensure()?;
+            create_link(time_path.hash()?,entry_hash.clone(), ())?;
+
             let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
               entry,
               header_hash: ::holo_hash::HeaderHashB64::new(address),

@@ -8,18 +8,20 @@ authors = ["Connor Turland <connor@sprillow.com>"]
 edition = "2018"
 
 [dependencies]
-hdk = { version = "0.0.109" }
+hdk = "0.0.109"
 holo_hash = { version = "0.0.8", features = ["encoding"]}
 paste = "1.0.5"
 serde = "1.0.123"
 thiserror = "1"
 mockall = "0.9"
 fixt = { version = "0.0.6", optional = true }
+chrono = "0.4.19"
 
 [dev-dependencies]
 rand = "0.7"
 strum = "0.18.0"
 strum_macros = "0.18.0"
+holochain_types = "0.0.9"
 
 [features]
 mock = ["hdk/mock", "hdk/test_utils", "fixt"]
