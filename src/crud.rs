@@ -40,8 +40,9 @@ macro_rules! crud {
       $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $convert_to_receiver_signal:ident
     ) => {
         ::paste::paste! {
-          use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
-          
+          // use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
+          // use hdk::hash_path::path::Component;
+          // use hdk::prelude::WasmError;
           /// This is the &str that can be passed into Path to
           /// find all the entries created using these create functions
           /// which are linked off of this Path.
@@ -54,12 +55,26 @@ macro_rules! crud {
             Path::from([<$i:upper _PATH>])
           }
 
-          fn now_date_time() -> ExternResult<DateTime<Utc>> {
+          pub fn err(reason: &str) -> WasmError {
+              WasmError::Guest(String::from(reason))
+          }
+
+          fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
               let time = sys_time()?.as_seconds_and_nanos();
 
-              let date: DateTime<Utc> =
-                  DateTime::from_utc(NaiveDateTime::from_timestamp(time.0, time.1), Utc);
+              let date: ::chrono::DateTime<::chrono::Utc> =
+                  ::chrono::DateTime::from_utc(::chrono::NaiveDateTime::from_timestamp(time.0, time.1), ::chrono::Utc);
               Ok(date)
+          }
+
+          pub fn get_last_component_string(path_tag: LinkTag) -> ExternResult<String> {
+              let hour_path = Path::try_from(&path_tag)?;
+              let hour_components: Vec<::hdk::hash_path::path::Component> = hour_path.into();
+
+              let hour_bytes: &::hdk::hash_path::path::Component = hour_components.last().ok_or(err("Invalid path"))?;
+              let hour_str: String = hour_bytes.try_into()?;
+
+              Ok(hour_str)
           }
 
           #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
@@ -86,7 +101,8 @@ macro_rules! crud {
             create_link(path_hash, entry_hash.clone(), ())?;
 
             // create a time_path
-            let date = now_date_time()?;
+            let date: ::chrono::DateTime<::chrono::Utc> = now_date_time()?;
+
             let time_path = Path::from(format!(
                 "{}_create_time.{}-{}-{}.{}",
                 $path,
@@ -147,6 +163,78 @@ macro_rules! crud {
           pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::FetchOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
             [<inner_fetch_ $i s>](fetch_options, GetOptions::latest())
           }
+
+
+          pub fn [<fetch_ $i s_by_time>](time: $crate::retrieval::FetchEntriesTime) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
+            let entries = match time.hour {
+                None => [<get_ $i s_by_day>](time),
+                Some(h) => [<get_ $i s_by_hour>](time.year, time.month, time.day, h),
+            }?;
+
+            Ok(entries)
+          }
+
+          pub fn [<get_ $i s_by_day>](time: $crate::retrieval::FetchEntriesTime) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
+            let path = Path::from(format!(
+                "{}_create_time.{}-{}-{}",
+                $path,
+                time.year,
+                time.month,
+                time.day
+            ));
+
+            let children = path.children()?;
+
+            let entries = children
+                .into_inner()
+                .into_iter()
+                .map(|hour_link| {
+                    let hour_str = get_last_component_string(hour_link.tag)?;
+
+                    let hour = hour_str.parse::<usize>().or(Err(err("Invalid path")))?;
+
+                    [<get_ $i s_by_hour>](time.year, time.month, time.day, hour)
+                })
+                .collect::<ExternResult<Vec<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>>>>()?
+                .into_iter()
+                .flatten()
+                .collect();
+
+            Ok(entries)
+          }
+
+          // returns a vector of wire element of specific entry type
+          pub fn [<get_ $i s_by_hour>](
+            year: usize,
+            month: usize,
+            day: usize,
+            hour: usize,
+          ) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
+            let path = Path::from(format!(
+                "{}_create_time.{}-{}-{}.{}",
+                $path,
+                year,
+                month,
+                day,
+                hour
+            ));
+
+            let links = get_links(path.hash()?, None)?;
+
+            let entries: Vec<$crate::wire_element::WireElement<[<$crud_type>]>> = links
+                .into_inner()
+                .into_iter()
+                .map(|link| {
+                  // improve error handling here
+                  [<fetch_ $i s>]($crate::retrieval::FetchOptions::Specific(vec!(::holo_hash::EntryHashB64::from(link.target))))
+                })
+                .filter_map(Result::ok)
+                .map(|vec| vec[0])
+                // .collect::<ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>>>()?;
+                .collect();
+            Ok(entries)
+          }
+
 
           /*
             UPDATE

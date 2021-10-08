@@ -134,3 +134,11 @@ pub enum FetchOptions {
     All,
     Specific(Vec<EntryHashB64>),
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct FetchEntriesTime {
+    pub year: usize,
+    pub month: usize,
+    pub day: usize,
+    pub hour: Option<usize>,
+}
