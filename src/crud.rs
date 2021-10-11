@@ -41,6 +41,7 @@ macro_rules! crud {
     ) => {
         ::paste::paste! {
           // use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
+          use ::chrono::{Datelike, Timelike};
           // use hdk::hash_path::path::Component;
           // use hdk::prelude::WasmError;
           /// This is the &str that can be passed into Path to
@@ -92,7 +93,7 @@ macro_rules! crud {
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[doc="This will be called with `send_signal` as `true` by [create_" $i "]"]
-          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
+          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool, add_time_path: Option<String>) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
             let address = create_entry(&entry)?;
             let entry_hash = hash_entry(&entry)?;
             let path = [< get_ $i _path >]();
@@ -100,26 +101,32 @@ macro_rules! crud {
             let path_hash = path.hash()?;
             create_link(path_hash, entry_hash.clone(), ())?;
 
-            // create a time_path
-            let date: ::chrono::DateTime<::chrono::Utc> = now_date_time()?;
+            match add_time_path {
+              None => (),
+              Some(base_component) => {
+                // create a time_path
+                let date: ::chrono::DateTime<::chrono::Utc> = now_date_time()?;
+                
+                let time_path = Path::from(format!(
+                    "{}.{}-{}-{}.{}",
+                    base_component,
+                    date.year(),
+                    date.month(),
+                    date.day(),
+                    date.hour()
+                ));
 
-            let time_path = Path::from(format!(
-                "{}_create_time.{}-{}-{}.{}",
-                $path,
-                date.year(),
-                date.month(),
-                date.day(),
-                date.hour()
-            ));
-
-            time_path.ensure()?;
-            create_link(time_path.hash()?,entry_hash.clone(), ())?;
-
+                time_path.ensure()?;
+                create_link(time_path.hash()?,entry_hash.clone(), ())?;
+              }
+            }
+           
             let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
               entry,
               header_hash: ::holo_hash::HeaderHashB64::new(address),
               entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
             };
+            
             if (send_signal) {
               let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
                 entry_type: $path.to_string(),
@@ -142,7 +149,7 @@ macro_rules! crud {
           #[doc="This just calls [inner_create_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            [<inner_create_ $i>](entry, true)
+            [<inner_create_ $i>](entry, true, None)
           }
 
           /*
