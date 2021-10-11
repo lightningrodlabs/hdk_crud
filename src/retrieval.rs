@@ -96,6 +96,7 @@ pub fn fetch_links<
         .collect())
 }
 
+// TODO: change this in such a way that the path is only passed in if it is needed (for fetching all), for example `All(String)` pass in the path as string
 /// Fetch either all entries of a certain type (assuming they are linked to a path) or a specific subset given their entry hashes.
 pub fn fetch_entries<
     EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
@@ -129,6 +130,98 @@ pub fn fetch_entries<
     }
 }
 
+
+pub fn err(reason: &str) -> WasmError {
+    WasmError::Guest(String::from(reason))
+}
+
+// what is this function doing?
+pub fn get_last_component_string(path_tag: LinkTag) -> ExternResult<String> {
+    let hour_path = Path::try_from(&path_tag)?;
+    let hour_components: Vec<hdk::hash_path::path::Component> = hour_path.into();
+
+    let hour_bytes: &hdk::hash_path::path::Component = hour_components.last().ok_or(err("Invalid path"))?;
+    let hour_str: String = hour_bytes.try_into()?;
+
+    Ok(hour_str)
+}
+
+pub fn fetch_entries_by_time<
+    EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
+>(time: FetchEntriesTime, base_component: String) -> Result<Vec<WireElement<EntryType>>, WasmError> {
+    let entries = match time.hour {
+        None => fetch_entries_by_day(time, base_component),
+        Some(h) => fetch_entries_by_hour(time.year, time.month, time.day, h, base_component),
+    }?;
+
+    Ok(entries)
+}
+
+pub fn fetch_entries_by_day<
+    EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
+>(time: FetchEntriesTime, base_component: String) -> Result<Vec<WireElement<EntryType>>, WasmError> {
+    let path = Path::from(format!(
+        "{}.{}-{}-{}",
+        base_component.clone(),
+        time.year,
+        time.month,
+        time.day
+    ));
+
+    let children = path.children()?;
+
+    let entries = children
+        .into_inner()
+        .into_iter()
+        .map(|hour_link| {
+            let hour_str = get_last_component_string(hour_link.tag)?;
+
+            let hour = hour_str.parse::<usize>().or(Err(err("Invalid path")))?;
+
+            fetch_entries_by_hour(time.year, time.month, time.day, hour, base_component.clone())
+        })
+        .collect::<Result<Vec<Vec<WireElement<EntryType>>>, WasmError>>()?
+        .into_iter()
+        .flatten()
+        .collect();
+
+    Ok(entries)
+}
+
+// returns a vector of wire element of specific entry type
+pub fn fetch_entries_by_hour<
+    EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
+>(
+    year: usize,
+    month: usize,
+    day: usize,
+    hour: usize,
+    base_component: String,
+) -> Result<Vec<WireElement<EntryType>>, WasmError> {
+    let path = Path::from(format!(
+        "{}.{}-{}-{}.{}",
+        base_component,
+        year,
+        month,
+        day,
+        hour
+    ));
+
+    let links = get_links(path.hash()?, None)?;
+
+    let entries: Vec<WireElement<EntryType>> = links
+        .into_inner()
+        .into_iter()
+        .map(|link| {
+            // improve error handling here
+            fetch_entries::<EntryType>(Path::from(""), FetchOptions::Specific(vec!(holo_hash::EntryHashB64::from(link.target))), GetOptions::latest())
+        })
+        .filter_map(Result::ok)
+        .map(|mut vec| vec.pop())
+        .filter_map(identity)
+        .collect();
+    Ok(entries)
+}
 #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 pub enum FetchOptions {
     All,
