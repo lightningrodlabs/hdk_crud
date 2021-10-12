@@ -32,7 +32,16 @@
 ///     convert_to_receiver_signal,
 /// );
 /// ```
+use hdk::time::sys_time;
+use hdk::prelude::ExternResult;
 
+fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
+    let time = sys_time()?.as_seconds_and_nanos();
+
+    let date: ::chrono::DateTime<::chrono::Utc> =
+        ::chrono::DateTime::from_utc(::chrono::NaiveDateTime::from_timestamp(time.0, time.1), ::chrono::Utc);
+    Ok(date)
+}
 
 #[macro_export]
 macro_rules! crud {
@@ -40,15 +49,11 @@ macro_rules! crud {
       $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $convert_to_receiver_signal:ident
     ) => {
         ::paste::paste! {
-          // use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
           use ::chrono::{Datelike, Timelike};
-          // use hdk::hash_path::path::Component;
-          // use hdk::prelude::WasmError;
           /// This is the &str that can be passed into Path to
           /// find all the entries created using these create functions
           /// which are linked off of this Path.
           pub const [<$i:upper _PATH>]: &str = $path;
-          // pub const [<$i:upper _CREATE_TIME>]: &str = format!("{}_create_time", [<$i:upper _PATH>].to_string()); 
 
           /// Retrieve the Path for these entry types
           /// to which all entries are linked
@@ -56,17 +61,7 @@ macro_rules! crud {
             Path::from([<$i:upper _PATH>])
           }
 
-          pub fn err(reason: &str) -> WasmError {
-              WasmError::Guest(String::from(reason))
-          }
-
-          fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
-              let time = sys_time()?.as_seconds_and_nanos();
-
-              let date: ::chrono::DateTime<::chrono::Utc> =
-                  ::chrono::DateTime::from_utc(::chrono::NaiveDateTime::from_timestamp(time.0, time.1), ::chrono::Utc);
-              Ok(date)
-          }
+          
 
 
           #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
@@ -96,16 +91,9 @@ macro_rules! crud {
               None => (),
               Some(base_component) => {
                 // create a time_path
-                let date: ::chrono::DateTime<::chrono::Utc> = now_date_time()?;
+                let date: ::chrono::DateTime<::chrono::Utc> = $crate::crud::now_date_time()?;
                 
-                let time_path = Path::from(format!(
-                    "{}.{}-{}-{}.{}",
-                    base_component,
-                    date.year(),
-                    date.month(),
-                    date.day(),
-                    date.hour()
-                ));
+                let time_path = $crate::retrieval::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
 
                 time_path.ensure()?;
                 create_link(time_path.hash()?,entry_hash.clone(), ())?;
