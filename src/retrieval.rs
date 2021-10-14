@@ -134,12 +134,10 @@ pub fn fetch_entries<
 pub fn fetch_entries_by_time<
     EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
 >(time: FetchEntriesTime, base_component: String) -> Result<Vec<WireElement<EntryType>>, WasmError> {
-    let entries = match time.hour {
+    Ok(match time.hour {
         None => fetch_entries_by_day(time, base_component),
         Some(h) => fetch_entries_by_hour(time.year, time.month, time.day, h, base_component),
-    }?;
-
-    Ok(entries)
+    }?)
 }
 
 pub fn fetch_entries_by_day<
@@ -159,11 +157,9 @@ pub fn fetch_entries_by_day<
 
             fetch_entries_by_hour(time.year, time.month, time.day, hour, base_component.clone())
         })
-        .collect::<Result<Vec<Vec<WireElement<EntryType>>>, WasmError>>()?
-        .into_iter()
+        .filter_map(Result::ok)
         .flatten()
         .collect();
-
     Ok(entries)
 }
 
