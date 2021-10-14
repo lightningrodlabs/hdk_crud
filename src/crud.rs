@@ -34,12 +34,13 @@
 /// ```
 use hdk::time::sys_time;
 use hdk::prelude::ExternResult;
+use chrono::{DateTime, Utc, NaiveDateTime};
 
 fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
     let time = sys_time()?.as_seconds_and_nanos();
 
-    let date: ::chrono::DateTime<::chrono::Utc> =
-        ::chrono::DateTime::from_utc(::chrono::NaiveDateTime::from_timestamp(time.0, time.1), ::chrono::Utc);
+    let date: DateTime<Utc> =
+        DateTime::from_utc(NaiveDateTime::from_timestamp(time.0, time.1), Utc);
     Ok(date)
 }
 
@@ -93,7 +94,7 @@ macro_rules! crud {
                 // create a time_path
                 let date: ::chrono::DateTime<::chrono::Utc> = $crate::crud::now_date_time()?;
                 
-                let time_path = $crate::retrieval::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
+                let time_path = $crate::datetime_queries::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
 
                 time_path.ensure()?;
                 create_link(time_path.hash()?,entry_hash.clone(), ())?;
