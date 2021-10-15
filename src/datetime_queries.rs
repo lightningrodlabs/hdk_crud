@@ -285,3 +285,71 @@ pub fn hour_path_from_date(base_component: String, year: i32, month: u32, day: u
         hour
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use hdk::prelude::*;
+    #[test]
+    fn test_fetch_entries_by_day() {
+        // call test for entries by hour
+        
+        let mut mock_hdk = MockHdkT::new();
+        // the must_get_header call for the parent goal
+        
+        // set up input and outputs for hash entry
+        let path = Path::from("");
+        let path_entry = Entry::try_from(path).unwrap();
+        let path_hash = fixt!(EntryHash);
+        mock_hdk
+            .expect_hash_entry()
+            .with(mockall::predicate::eq(path_entry))
+            .times(1)
+            .return_const(Ok(path_hash));
+        
+        // set up io for get
+        let path_get_input = vec![GetInput::new(
+            AnyDhtHash::from(path_hash.clone()),
+            GetOptions::content(),
+        )];
+        let expected_get_output = vec![Some(fixt!(Element))];
+        mock_hdk
+            .expect_get()
+            .with(mockall::predicate::eq(path_get_input))
+            .times(1)
+            .return_const(Ok(expected_get_output));
+        
+        // set up input and outputs for hash entry
+        mock_hdk
+            .expect_hash_entry()
+            .with(mockall::predicate::eq(path_entry))
+            .times(1)
+            .return_const(Ok(path_hash));
+        
+        // set up input for get links
+        // set up input and outputs for hash entry
+        pub const NAME: [u8; 8] = [0x68, 0x64, 0x6b, 0x2e, 0x70, 0x61, 0x74, 0x68];
+        let get_links_input = vec![GetLinksInput::new(
+            path_hash,
+            Some(holochain_zome_types::link::LinkTag::new(NAME)),
+        )];
+        let get_links_output = vec![fixt!(Links)]; // this is where I would arbitrarily choose what the children are (ie hours)
+        mock_hdk
+            .expect_get_links()
+            .with(mockall::predicate::eq(get_links_input))
+            .times(1)
+            .return_const(Ok(get_links_output));
+    }
+    fn test_fetch_entries_by_hour(){
+        // mock `path.hash()
+        // mock `get_links`
+        // mock `get_latest_for entry`
+    }
+    fn test_fetch_entries_by_time(){
+        // not necessary
+    }
+    fn test_fetch_entries_in_time_range(){
+        // need to test the logic of all 4 sub functions
+        // not sure how we could unit test the date range logic and avoid retesting fetch entries by day or hour
+    }
+
+}
