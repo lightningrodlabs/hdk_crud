@@ -3,6 +3,74 @@ use hdk::prelude::*;
 use crate::wire_element::WireElement;
 use crate::retrieval::*;
 use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc, Duration};
+use mockall_double::double;
+use ::mockall::automock;
+
+pub struct Thing{}
+#[automock]
+impl Thing {
+    pub fn foo(&self, number: u32) -> u32 {
+        number + number
+    }
+    pub fn boo(&self, input: u32, input2: u32) -> u32 {
+        input + input2
+    }
+}
+
+#[double]
+use Thing as Boo;
+
+fn do_stuff(thing: &Boo, input: u32) -> u32 {
+    thing.foo(input)
+}
+
+fn do_more(thing: &Boo, input: u32, input2: u32) -> u32 {
+    thing.boo(input, input2)
+}
+
+pub struct TimeQueries {}
+#[automock]
+impl TimeQueries {
+    pub fn fetch_entries_by_hour<
+        EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
+    >(
+        &self,
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        base_component: String,
+    ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
+        let path = hour_path_from_date(base_component.clone(), year, month, day, hour);
+        let links = get_links(path.hash()?, None)?;
+
+        let entries: Vec<WireElement<EntryType>> = links
+            .into_inner()
+            .into_iter()
+            .map(|link| {
+                get_latest_for_entry::<EntryType>(link.target, GetOptions::latest())
+            })
+            .filter_map(Result::ok)
+            .filter_map(identity)
+            .map(|x| WireElement::from(x))
+            .collect();
+        Ok(entries)
+    }
+}
+
+#[double]
+use TimeQueries as MockQueries;
+
+fn mock_fetch_entries_by_hour(
+    mock: &MockQueries,
+    year: i32,
+    month: u32,
+    day: u32,
+    hour: u32,
+    base_component: String,
+) -> Result<Vec<WireElement<EntryType>>, WasmError> {
+    mock.fetch_entries_by_hour(year, month, day, hour, base_component)
+}
 
 pub fn fetch_entries_by_time<
     EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>,
@@ -286,20 +354,63 @@ pub fn hour_path_from_date(base_component: String, year: i32, month: u32, day: u
     ))
 }
 
+
+// use mockall_double::double;
+// mod thing {
+//     use mockall::automock;
+//     pub struct Thing{}
+//     #[automock]
+//     impl Thing {
+//         pub fn foo(&self, number: u32) -> u32 {
+//             number + number
+//         }
+//     }
+// }
+
+
+
+
+
 #[cfg(test)]
 mod tests {
     use hdk::prelude::*;
+    use super::*;
+    #[test]
+    fn test_foo() {
+        let mut mock = Boo::default();
+        let input: u32 = 1;
+        let output: u32 = 3;
+
+        mock
+            .expect_foo()
+            .with(mockall::predicate::eq(input))
+            .times(1)
+            .return_const(output);
+        assert_eq!(do_stuff(&mock, input),3);
+    }
+    #[test]
+    fn test_boo() {
+        let mut mock = Boo::default();
+        let input: u32 = 1;
+        let input2: u32 = 1;
+        let output: u32 = 3;
+
+        mock
+            .expect_boo()
+            .with(mockall::predicate::eq(input), mockall::predicate::eq(input2))
+            .times(1)
+            .return_const(output);
+        assert_eq!(do_more(&mock, input, input2),3);
+    }
+
     #[test]
     fn test_fetch_entries_by_day() {
-        // call test for entries by hour
         
         let mut mock_hdk = MockHdkT::new();
-        // the must_get_header call for the parent goal
-        
-        // set up input and outputs for hash entry
-        let path = Path::from("");
+
+        let path = Path::from("create.2021-10-15");
         let path_entry = Entry::try_from(path).unwrap();
-        let path_hash = fixt!(EntryHash);
+        let path_hash = fixt!(EntryHash); // are there other ways to randomly generate data types?
         mock_hdk
             .expect_hash_entry()
             .with(mockall::predicate::eq(path_entry))
@@ -311,7 +422,7 @@ mod tests {
             AnyDhtHash::from(path_hash.clone()),
             GetOptions::content(),
         )];
-        let expected_get_output = vec![Some(fixt!(Element))];
+        let expected_get_output = vec![Some(fixt!(Element))]; // this should return the path
         mock_hdk
             .expect_get()
             .with(mockall::predicate::eq(path_get_input))
@@ -332,13 +443,36 @@ mod tests {
             path_hash,
             Some(holochain_zome_types::link::LinkTag::new(NAME)),
         )];
-        let get_links_output = vec![fixt!(Links)]; // this is where I would arbitrarily choose what the children are (ie hours)
+        let get_links_output = vec![fixt!(Links)]; // this is where I would arbitrarily choose what the children are (ie hours), what is the format of these links?
+        // Links is a vec of Link, how does the base `get_links` structure the list of links? within one element of vec<Links> or one link per Links?
+        // constructing this vec of links would be important to testing the functionality
         mock_hdk
             .expect_get_links()
             .with(mockall::predicate::eq(get_links_input))
             .times(1)
             .return_const(Ok(get_links_output));
+        
+        // set up a mock of fetch_entries_by_hour
+        let mut mock_queries = MockQueries::default();
+
+        mock_queries
+            .expect_fetch_entries_by_hour()
+            .with(
+                mockall::predicate::eq(year),
+                mockall::predicate::eq(month),
+                mockall::predicate::eq(day),
+                mockall::predicate::eq(hour),
+                mockall::predicate::eq(base_component),
+            )
+            .times(1)
+            .return_const(output);
+        
+        mock_fetch_entries_by_hour(&mock_queries, year, month, day, hour, base_component); 
+        assert_eq!(fetch_entries_by_day(year, month, day, base_component), expected_output);
+        // how does it know to use the mock version from line 470? And how can it pass that in?
+        // would fetch_entries_by_day call the 'by hour' trait, or would it call the 'do_stuff' equivalent?
     }
+
     fn test_fetch_entries_by_hour(){
         // mock `path.hash()
         // mock `get_links`
