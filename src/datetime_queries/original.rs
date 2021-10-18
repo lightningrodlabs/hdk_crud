@@ -26,7 +26,8 @@ mod thing {
     impl Thing {
         pub fn foo(thing2: &Thing2, number: u32) -> u32 {
             // number;
-            super::do_stuff(thing2, number)
+            // super::do_stuff(thing2, number) // this works
+            thing2.boo(number)
 
             // code that we want to test
 
@@ -62,8 +63,13 @@ mod tests {
 
     #[test]
     fn test_test_test() {
-        let mocked = thing2::MockThing2::new();
-        let res = thing::Thing::foo(&mocked, 5);
+        let mut mocked = thing2::MockThing2::new();
+        mocked 
+            .expect_boo()
+            .with(mockall::predicate::eq(1 as u32))
+            .times(1)
+            .return_const(1 as u32);
+        let res = thing::Thing::foo(&mocked, 1 as u32);
     }
 }
 
@@ -451,117 +457,117 @@ pub fn hour_path_from_date(
 //     }
 // }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use hdk::prelude::*;
-    #[test]
-    fn test_foo() {
-        let mut mock = Thing2::default();
-        let input: u32 = 1;
-        let output: u32 = 3;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use hdk::prelude::*;
+//     #[test]
+//     fn test_foo() {
+//         let mut mock = Thing2::default();
+//         let input: u32 = 1;
+//         let output: u32 = 3;
 
-        mock.expect_boo()
-            .with(mockall::predicate::eq(input))
-            .times(1)
-            .return_const(output);
-        assert_eq!(thing::Thing::foo(&mock, input), 3);
-    }
-    // #[test]
-    // fn test_boo() {
-    //     let mut mock = Boo::default();
-    //     let input: u32 = 1;
-    //     let input2: u32 = 1;
-    //     let output: u32 = 3;
+//         mock.expect_boo()
+//             .with(mockall::predicate::eq(input))
+//             .times(1)
+//             .return_const(output);
+//         assert_eq!(thing::Thing::foo(&mock, input), 3);
+//     }
+//     // #[test]
+//     // fn test_boo() {
+//     //     let mut mock = Boo::default();
+//     //     let input: u32 = 1;
+//     //     let input2: u32 = 1;
+//     //     let output: u32 = 3;
 
-    //     mock
-    //         .expect_boo()
-    //         .with(mockall::predicate::eq(input), mockall::predicate::eq(input2))
-    //         .times(1)
-    //         .return_const(output);
-    //     assert_eq!(do_more(&mock, input, input2),3);
-    // }
+//     //     mock
+//     //         .expect_boo()
+//     //         .with(mockall::predicate::eq(input), mockall::predicate::eq(input2))
+//     //         .times(1)
+//     //         .return_const(output);
+//     //     assert_eq!(do_more(&mock, input, input2),3);
+//     // }
 
-    // #[test]
-    // fn test_fetch_entries_by_day() {
+//     // #[test]
+//     // fn test_fetch_entries_by_day() {
 
-    //     let mut mock_hdk = MockHdkT::new();
+//     //     let mut mock_hdk = MockHdkT::new();
 
-    //     let path = Path::from("create.2021-10-15");
-    //     let path_entry = Entry::try_from(path).unwrap();
-    //     let path_hash = fixt!(EntryHash); // are there other ways to randomly generate data types?
-    //     mock_hdk
-    //         .expect_hash_entry()
-    //         .with(mockall::predicate::eq(path_entry))
-    //         .times(1)
-    //         .return_const(Ok(path_hash));
+//     //     let path = Path::from("create.2021-10-15");
+//     //     let path_entry = Entry::try_from(path).unwrap();
+//     //     let path_hash = fixt!(EntryHash); // are there other ways to randomly generate data types?
+//     //     mock_hdk
+//     //         .expect_hash_entry()
+//     //         .with(mockall::predicate::eq(path_entry))
+//     //         .times(1)
+//     //         .return_const(Ok(path_hash));
 
-    //     // set up io for get
-    //     let path_get_input = vec![GetInput::new(
-    //         AnyDhtHash::from(path_hash.clone()),
-    //         GetOptions::content(),
-    //     )];
-    //     let expected_get_output = vec![Some(fixt!(Element))]; // this should return the path
-    //     mock_hdk
-    //         .expect_get()
-    //         .with(mockall::predicate::eq(path_get_input))
-    //         .times(1)
-    //         .return_const(Ok(expected_get_output));
+//     //     // set up io for get
+//     //     let path_get_input = vec![GetInput::new(
+//     //         AnyDhtHash::from(path_hash.clone()),
+//     //         GetOptions::content(),
+//     //     )];
+//     //     let expected_get_output = vec![Some(fixt!(Element))]; // this should return the path
+//     //     mock_hdk
+//     //         .expect_get()
+//     //         .with(mockall::predicate::eq(path_get_input))
+//     //         .times(1)
+//     //         .return_const(Ok(expected_get_output));
 
-    //     // set up input and outputs for hash entry
-    //     mock_hdk
-    //         .expect_hash_entry()
-    //         .with(mockall::predicate::eq(path_entry))
-    //         .times(1)
-    //         .return_const(Ok(path_hash));
+//     //     // set up input and outputs for hash entry
+//     //     mock_hdk
+//     //         .expect_hash_entry()
+//     //         .with(mockall::predicate::eq(path_entry))
+//     //         .times(1)
+//     //         .return_const(Ok(path_hash));
 
-    //     // set up input for get links
-    //     // set up input and outputs for hash entry
-    //     pub const NAME: [u8; 8] = [0x68, 0x64, 0x6b, 0x2e, 0x70, 0x61, 0x74, 0x68];
-    //     let get_links_input = vec![GetLinksInput::new(
-    //         path_hash,
-    //         Some(holochain_zome_types::link::LinkTag::new(NAME)),
-    //     )];
-    //     let get_links_output = vec![fixt!(Links)]; // this is where I would arbitrarily choose what the children are (ie hours), what is the format of these links?
-    //     // Links is a vec of Link, how does the base `get_links` structure the list of links? within one element of vec<Links> or one link per Links?
-    //     // constructing this vec of links would be important to testing the functionality
-    //     mock_hdk
-    //         .expect_get_links()
-    //         .with(mockall::predicate::eq(get_links_input))
-    //         .times(1)
-    //         .return_const(Ok(get_links_output));
+//     //     // set up input for get links
+//     //     // set up input and outputs for hash entry
+//     //     pub const NAME: [u8; 8] = [0x68, 0x64, 0x6b, 0x2e, 0x70, 0x61, 0x74, 0x68];
+//     //     let get_links_input = vec![GetLinksInput::new(
+//     //         path_hash,
+//     //         Some(holochain_zome_types::link::LinkTag::new(NAME)),
+//     //     )];
+//     //     let get_links_output = vec![fixt!(Links)]; // this is where I would arbitrarily choose what the children are (ie hours), what is the format of these links?
+//     //     // Links is a vec of Link, how does the base `get_links` structure the list of links? within one element of vec<Links> or one link per Links?
+//     //     // constructing this vec of links would be important to testing the functionality
+//     //     mock_hdk
+//     //         .expect_get_links()
+//     //         .with(mockall::predicate::eq(get_links_input))
+//     //         .times(1)
+//     //         .return_const(Ok(get_links_output));
 
-    //     // set up a mock of fetch_entries_by_hour
-    //     let mut mock_queries = MockQueries::default();
+//     //     // set up a mock of fetch_entries_by_hour
+//     //     let mut mock_queries = MockQueries::default();
 
-    //     mock_queries
-    //         .expect_fetch_entries_by_hour()
-    //         .with(
-    //             mockall::predicate::eq(year),
-    //             mockall::predicate::eq(month),
-    //             mockall::predicate::eq(day),
-    //             mockall::predicate::eq(hour),
-    //             mockall::predicate::eq(base_component),
-    //         )
-    //         .times(1)
-    //         .return_const(output);
+//     //     mock_queries
+//     //         .expect_fetch_entries_by_hour()
+//     //         .with(
+//     //             mockall::predicate::eq(year),
+//     //             mockall::predicate::eq(month),
+//     //             mockall::predicate::eq(day),
+//     //             mockall::predicate::eq(hour),
+//     //             mockall::predicate::eq(base_component),
+//     //         )
+//     //         .times(1)
+//     //         .return_const(output);
 
-    //     mock_fetch_entries_by_hour(&mock_queries, year, month, day, hour, base_component);
-    //     assert_eq!(fetch_entries_by_day(&mock_queries, year, month, day, base_component), expected_output);
-    //     // how does it know to use the mock version from line 470? And how can it pass that in?
-    //     // would fetch_entries_by_day call the 'by hour' trait, or would it call the 'do_stuff' equivalent?
-    // }
+//     //     mock_fetch_entries_by_hour(&mock_queries, year, month, day, hour, base_component);
+//     //     assert_eq!(fetch_entries_by_day(&mock_queries, year, month, day, base_component), expected_output);
+//     //     // how does it know to use the mock version from line 470? And how can it pass that in?
+//     //     // would fetch_entries_by_day call the 'by hour' trait, or would it call the 'do_stuff' equivalent?
+//     // }
 
-    fn test_fetch_entries_by_hour() {
-        // mock `path.hash()
-        // mock `get_links`
-        // mock `get_latest_for entry`
-    }
-    fn test_fetch_entries_by_time() {
-        // not necessary
-    }
-    fn test_fetch_entries_in_time_range() {
-        // need to test the logic of all 4 sub functions
-        // not sure how we could unit test the date range logic and avoid retesting fetch entries by day or hour
-    }
-}
+//     fn test_fetch_entries_by_hour() {
+//         // mock `path.hash()
+//         // mock `get_links`
+//         // mock `get_latest_for entry`
+//     }
+//     fn test_fetch_entries_by_time() {
+//         // not necessary
+//     }
+//     fn test_fetch_entries_in_time_range() {
+//         // need to test the logic of all 4 sub functions
+//         // not sure how we could unit test the date range logic and avoid retesting fetch entries by day or hour
+//     }
+// }
