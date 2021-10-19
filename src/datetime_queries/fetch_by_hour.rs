@@ -7,12 +7,20 @@ use crate::datetime_queries::original::{FetchEntriesTime, day_path_from_date, ge
 use std::convert::identity;
 #[cfg(feature = "mock")]
 use ::mockall::automock;
+pub type EntryAndHash<T> = (T, HeaderHash, EntryHash);
 
+/// The same as an EntryAndHash but inside an Option,
+/// so it can be Some(...) or None
+pub type OptionEntryAndHash<T> = Option<EntryAndHash<T>>;
+
+#[double]
+use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 pub struct FetchByHour {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByHour {
     pub fn fetch_entries_by_hour<EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>>(
         &self,
+        get_latest_entry: &GetLatestEntry,
         year: i32,
         month: u32,
         day: u32,
@@ -25,11 +33,23 @@ impl FetchByHour {
         let entries: Vec<WireElement<EntryType>> = links
             .into_inner()
             .into_iter()
-            .map(|link| get_latest_for_entry::<EntryType>(link.target, GetOptions::latest()))
+            .map(|link| get_latest_entry.get_latest_for_entry::<EntryType>(
+                link.target, 
+                GetOptions::latest()
+            ))
             .filter_map(Result::ok)
             .filter_map(identity)
             .map(|x| WireElement::from(x))
-            .collect();
+            .collect::<Vec<WireElement<EntryType>>>();
         Ok(entries)
+    }
+}
+
+pub mod tests {
+    fn test_fetch_entries_by_hour() {
+        // path.hash
+        // hash_entry
+        // get_links
+        // get_latest_for_entry
     }
 }
