@@ -94,7 +94,7 @@ macro_rules! crud {
                 // create a time_path
                 let date: ::chrono::DateTime<::chrono::Utc> = $crate::crud::now_date_time()?;
                 
-                let time_path = $crate::datetime_queries::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
+                let time_path = $crate::datetime_queries::original::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
 
                 time_path.ensure()?;
                 create_link(time_path.hash()?,entry_hash.clone(), ())?;

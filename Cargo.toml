@@ -17,6 +17,7 @@ mockall = "0.9"
 fixt = { version = "0.0.6", optional = true }
 mockall_double = { version = "0.2.0", optional = true }
 chrono = "0.4.19"
+assert_matches = "1.5.0"
 
 [dev-dependencies]
 rand = "0.7"
