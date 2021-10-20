@@ -5,7 +5,7 @@ use hdk::prelude::*;
 use mockall_double::double;
 use crate::datetime_queries::original::{FetchEntriesTime, day_path_from_date, get_last_component_string, err};
 use std::convert::identity;
-
+use ::mockall::automock;
 #[double]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 
@@ -13,8 +13,10 @@ use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 use crate::datetime_queries::fetch_by_hour::FetchByHour;
 
 pub struct FetchByDay {}
+#[cfg_attr(feature = "mock", automock)]
 impl FetchByDay {
     pub fn fetch_entries_by_day<EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>>(
+        &self,
         fetch_by_hour: &FetchByHour,
         get_latest_entry: &GetLatestEntry,
         time: FetchEntriesTime,
@@ -153,8 +155,8 @@ mod tests {
             .return_const(Ok(hour_entries));
 
         set_hdk(mock_hdk);
-        
-        let result = super::FetchByDay::fetch_entries_by_day::<Example>(
+        let fetch_by_day = super::FetchByDay {};
+        let result = fetch_by_day.fetch_entries_by_day::<Example>(
             &mock_queries,
             &mock_latest_entry,
             fetch_time, 
