@@ -1,24 +1,23 @@
+use crate::datetime_queries::original::{
+    day_path_from_date, get_last_component_string, hour_path_from_date, FetchEntriesTime,
+};
 use crate::retrieval::*;
 use crate::wire_element::WireElement;
+#[cfg(feature = "mock")]
+use ::mockall::automock;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
 use hdk::prelude::*;
 use mockall_double::double;
-use crate::datetime_queries::original::{FetchEntriesTime, day_path_from_date, get_last_component_string, hour_path_from_date};
 use std::convert::identity;
-#[cfg(feature = "mock")]
-use ::mockall::automock;
-pub type EntryAndHash<T> = (T, HeaderHash, EntryHash);
-
-/// The same as an EntryAndHash but inside an Option,
-/// so it can be Some(...) or None
-pub type OptionEntryAndHash<T> = Option<EntryAndHash<T>>;
 
 #[double]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 pub struct FetchByHour {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByHour {
-    pub fn fetch_entries_by_hour<EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>>(
+    pub fn fetch_entries_by_hour<
+        EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
+    >(
         &self,
         get_latest_entry: &GetLatestEntry,
         year: i32,
@@ -33,10 +32,10 @@ impl FetchByHour {
         let entries: Vec<WireElement<EntryType>> = links
             .into_inner()
             .into_iter()
-            .map(|link| get_latest_entry.get_latest_for_entry::<EntryType>(
-                link.target, 
-                GetOptions::latest()
-            ))
+            .map(|link| {
+                get_latest_entry
+                    .get_latest_for_entry::<EntryType>(link.target, GetOptions::latest())
+            })
             .filter_map(Result::ok)
             .filter_map(identity)
             .map(|x| WireElement::from(x))
@@ -47,20 +46,19 @@ impl FetchByHour {
 
 #[cfg(test)]
 mod tests {
-    use ::fixt::prelude::*;
-    use hdk::hash_path::path::NAME;
-    use holochain_types::prelude::{ElementFixturator, LinkTagFixturator};
-    use hdk::prelude::*;
+    use crate::crud::example::Example;
     use crate::datetime_queries::fetch_by_hour;
     use crate::datetime_queries::original::FetchEntriesTime;
-    use crate::wire_element::WireElement;
-    use crate::crud::example::Example;
     use crate::retrieval::get_latest_for_entry;
+    use crate::wire_element::WireElement;
+    use ::fixt::prelude::*;
     use assert_matches::assert_matches;
+    use hdk::hash_path::path::NAME;
+    use hdk::prelude::*;
+    use holochain_types::prelude::{ElementFixturator, LinkTagFixturator};
 
     #[test]
     fn test_fetch_entries_by_hour() {
-
         let mut mock_hdk = MockHdkT::new();
 
         // set up for the first expected hash_entry call
@@ -72,12 +70,9 @@ mod tests {
             .with(mockall::predicate::eq(path_entry.clone()))
             .times(1)
             .return_const(Ok(path_hash.clone()));
-        
-        let get_links_input = vec![GetLinksInput::new(
-            path_hash,
-            None,
-        )];
-        
+
+        let get_links_input = vec![GetLinksInput::new(path_hash, None)];
+
         // creating an expected output of get_links, which is a Vec<Links>, and Links is a Vec<Link>
         let link_tag: LinkTag = LinkTag::try_from(&Path::from("create.2021-10-15.10")).unwrap();
 
@@ -89,23 +84,22 @@ mod tests {
         };
 
         let get_links_output = vec![Links::from(vec![link_output.clone()])];
-        
+
         mock_hdk
             .expect_get_links()
             .with(mockall::predicate::eq(get_links_input))
             .times(1)
             .return_const(Ok(get_links_output));
 
-        let get_latest_output = 
-        Some((Example {number: 1}, fixt![HeaderHash], fixt![EntryHash]));
-        
+        let get_latest_output = Some((Example { number: 1 }, fixt![HeaderHash], fixt![EntryHash]));
+
         // set up a mock of get_latest_for_entry
         let mut mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
         mock_get_latest
             .expect_get_latest_for_entry::<Example>()
             .with(
                 mockall::predicate::eq(link_output.target),
-                mockall::predicate::eq(GetOptions::latest())
+                mockall::predicate::eq(GetOptions::latest()),
             )
             .times(1)
             .return_const(Ok(get_latest_output.clone()));
@@ -116,12 +110,12 @@ mod tests {
         let result = fetch_by_hour.fetch_entries_by_hour::<Example>(
             &mock_get_latest,
             2021,
-            10 as u32, 
+            10 as u32,
             15 as u32,
             10 as u32,
-            base_component
+            base_component,
         );
         let output = vec![WireElement::from(get_latest_output.unwrap())];
-        assert_matches!(result, Ok(output));
+        assert_eq!(result, Ok(output));
     }
 }

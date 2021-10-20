@@ -1,10 +1,4 @@
-use std::convert::identity;
-
-use holo_hash::EntryHashB64;
 use hdk::prelude::*;
-
-use crate::wire_element::WireElement;
-use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc, Duration};
 
 use crate::retrieval::retrieval::*;
 
@@ -17,6 +11,7 @@ pub type EntryAndHash<T> = (T, HeaderHash, EntryHash);
 /// The same as an EntryAndHash but inside an Option,
 /// so it can be Some(...) or None
 pub type OptionEntryAndHash<T> = Option<EntryAndHash<T>>;
+
 #[derive(Debug, PartialEq)]
 pub struct GetLatestEntry {}
 #[cfg_attr(feature = "mock", automock)]
