@@ -218,7 +218,7 @@ fn next_day(date_time: DateTime<Utc>) -> DateTime<Utc> {
         Utc,
     )
 }
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct FetchEntriesTime {
     pub year: i32,
     pub month: u32,
