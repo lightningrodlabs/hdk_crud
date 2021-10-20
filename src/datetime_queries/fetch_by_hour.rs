@@ -1,4 +1,4 @@
-use crate::datetime_queries::original::{
+use crate::datetime_queries::utils::{
     day_path_from_date, get_last_component_string, hour_path_from_date, FetchEntriesTime,
 };
 use crate::retrieval::*;
@@ -48,7 +48,7 @@ impl FetchByHour {
 mod tests {
     use crate::crud::example::Example;
     use crate::datetime_queries::fetch_by_hour;
-    use crate::datetime_queries::original::FetchEntriesTime;
+    use crate::datetime_queries::utils::FetchEntriesTime;
     use crate::retrieval::get_latest_for_entry;
     use crate::wire_element::WireElement;
     use ::fixt::prelude::*;

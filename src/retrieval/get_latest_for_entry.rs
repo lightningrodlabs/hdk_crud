@@ -12,7 +12,7 @@ pub type EntryAndHash<T> = (T, HeaderHash, EntryHash);
 /// so it can be Some(...) or None
 pub type OptionEntryAndHash<T> = Option<EntryAndHash<T>>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct GetLatestEntry {}
 #[cfg_attr(feature = "mock", automock)]
 impl GetLatestEntry {

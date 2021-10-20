@@ -3,7 +3,7 @@ use crate::wire_element::WireElement;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
 use hdk::prelude::*;
 use mockall_double::double;
-use crate::datetime_queries::original::{FetchEntriesTime, day_path_from_date, get_last_component_string, err};
+use crate::datetime_queries::utils::{FetchEntriesTime, day_path_from_date, get_last_component_string, err};
 use std::convert::identity;
 use ::mockall::automock;
 #[double]
@@ -12,6 +12,7 @@ use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 #[double]
 use crate::datetime_queries::fetch_by_hour::FetchByHour;
 
+#[derive(Clone)]
 pub struct FetchByDay {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByDay {
@@ -23,6 +24,7 @@ impl FetchByDay {
         base_component: String,
     ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
         let path = day_path_from_date(base_component.clone(), time.year, time.month, time.day);
+        // TODO: wrap in path.exists
         let children = path.children()?;
 
         let entries = children
@@ -55,7 +57,7 @@ mod tests {
     use holochain_types::prelude::{ElementFixturator, LinkTagFixturator};
     use hdk::prelude::*;
     use crate::datetime_queries::fetch_by_hour;
-    use crate::datetime_queries::original::FetchEntriesTime;
+    use crate::datetime_queries::utils::FetchEntriesTime;
     use crate::wire_element::WireElement;
     use crate::crud::example::Example;
     use crate::retrieval::get_latest_for_entry;
