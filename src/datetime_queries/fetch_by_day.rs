@@ -142,7 +142,8 @@ mod tests {
         mock_queries
             .expect_fetch_entries_by_hour::<Example>()
             .with(
-                mockall::predicate::always(), // do this for now, was getting issues with predicate::eq
+                // MockGetLatestEntry does not implement PartialEq so can't be compared
+                mockall::predicate::always(), 
                 mockall::predicate::eq(fetch_time.year),
                 mockall::predicate::eq(fetch_time.month),
                 mockall::predicate::eq(fetch_time.day),
@@ -150,7 +151,7 @@ mod tests {
                 mockall::predicate::eq(base_component.clone()),
             )
             .times(1)
-            .return_const(Ok(hour_entries));
+            .return_const(Ok(hour_entries.clone()));
 
         set_hdk(mock_hdk);
         
@@ -160,6 +161,6 @@ mod tests {
             fetch_time, 
             base_component
         );
-        assert_matches!(result, Ok(hour_entries));
+        assert_eq!(result, Ok(hour_entries));
     }
 }

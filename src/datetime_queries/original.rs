@@ -8,11 +8,7 @@ use std::convert::identity;
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 use crate::datetime_queries::{fetch_by_day::FetchByDay, fetch_by_hour::FetchByHour};
 
-pub type EntryAndHash<T> = (T, HeaderHash, EntryHash);
 
-/// The same as an EntryAndHash but inside an Option,
-/// so it can be Some(...) or None
-pub type OptionEntryAndHash<T> = Option<EntryAndHash<T>>;
 // pub fn fetch_entries_by_time<EntryType: TryFrom<SerializedBytes, Error = SerializedBytesError>>(
 //     time: FetchEntriesTime,
 //     base_component: String,
