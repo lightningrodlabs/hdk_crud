@@ -1,5 +1,6 @@
 use super::fetchers::Fetchers;
-use super::utils::{next_day, FetchEntriesTime};
+use super::utils::next_day;
+use super::inputs::FetchEntriesTime;
 use crate::wire_element::WireElement;
 use ::mockall::automock;
 use chrono::{Datelike, Duration, Timelike};
@@ -72,7 +73,7 @@ impl FetchByHourHour {
 mod tests {
     use crate::crud::example::Example;
     use crate::datetime_queries::fetchers::Fetchers;
-    use crate::datetime_queries::utils::FetchEntriesTime;
+    use crate::datetime_queries::inputs::FetchEntriesTime;
     use crate::datetime_queries::{
         fetch_by_day, fetch_by_hour, fetch_entries_from_day_to_day, fetch_entries_from_day_to_hour,
         fetch_entries_from_hour_to_day, fetch_entries_from_hour_to_hour,

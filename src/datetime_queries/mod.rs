@@ -8,3 +8,4 @@ pub mod fetch_entries_from_hour_to_hour;
 pub mod fetch_in_time_range;
 pub mod fetchers;
 pub mod utils;
+pub mod inputs;

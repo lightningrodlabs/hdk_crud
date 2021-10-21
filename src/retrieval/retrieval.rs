@@ -23,6 +23,7 @@ pub fn get_header_hash(signed_header_hashed: element::SignedHeaderHashed) -> Hea
 /// Useful for having a Path that you link everything to. This also internally calls [get_latest_for_entry] meaning
 /// that the contents for each entry returned are automatically the latest contents.
 pub fn fetch_links<EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>>(
+    get_latest: &GetLatestEntry,
     entry_hash: EntryHash,
     get_options: GetOptions,
 ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
@@ -30,7 +31,6 @@ pub fn fetch_links<EntryType: 'static + TryFrom<SerializedBytes, Error = Seriali
         .into_inner()
         .into_iter()
         .map(|link: link::Link| {
-            let get_latest = GetLatestEntry {};
             get_latest.get_latest_for_entry::<EntryType>(link.target.clone(), get_options.clone())
         })
         .filter_map(Result::ok)
@@ -44,6 +44,7 @@ pub fn fetch_links<EntryType: 'static + TryFrom<SerializedBytes, Error = Seriali
 pub fn fetch_entries<
     EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
 >(
+    get_latest: &GetLatestEntry,
     entry_path: Path, // TODO: see if there is a way to derive this from the entry itself (like from entry id)
     fetch_options: FetchOptions,
     get_options: GetOptions,
@@ -51,13 +52,12 @@ pub fn fetch_entries<
     match fetch_options {
         FetchOptions::All => {
             let path_hash = entry_path.hash()?;
-            fetch_links::<EntryType>(path_hash, get_options)
+            fetch_links::<EntryType>(get_latest, path_hash, get_options)
         }
         FetchOptions::Specific(vec_entry_hash) => {
             let entries = vec_entry_hash
                 .iter()
                 .map(|entry_hash| {
-                    let get_latest = GetLatestEntry {}; // will probably want to pass in a struct to this function instead of this
                     get_latest.get_latest_for_entry::<EntryType>(
                         entry_hash.clone().into(),
                         get_options.clone(),

@@ -137,7 +137,8 @@ macro_rules! crud {
           */
           /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
           pub fn [<inner_fetch_ $i s>](fetch_options: $crate::retrieval::retrieval::FetchOptions, get_options: GetOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
-            let entries = $crate::retrieval::retrieval::fetch_entries::<$crud_type>([< get_ $i _path >](), fetch_options, get_options)?;
+            let get_latest = $crate::retrieval::get_latest_for_entry::GetLatestEntry {};
+            let entries = $crate::retrieval::retrieval::fetch_entries::<$crud_type>(&get_latest, [< get_ $i _path >](), fetch_options, get_options)?;
             Ok(entries)
           }
 

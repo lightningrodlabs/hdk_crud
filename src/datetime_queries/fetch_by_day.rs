@@ -1,6 +1,7 @@
 use crate::datetime_queries::utils::{
-    day_path_from_date, err, get_last_component_string, FetchEntriesTime,
+    day_path_from_date, err, get_last_component_string,
 };
+use crate::datetime_queries::inputs::FetchEntriesTime;
 #[double]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 use crate::wire_element::WireElement;
@@ -55,7 +56,7 @@ impl FetchByDay {
 mod tests {
     use crate::crud::example::Example;
     use crate::datetime_queries::fetch_by_hour;
-    use crate::datetime_queries::utils::FetchEntriesTime;
+    use crate::datetime_queries::inputs::FetchEntriesTime;
     use crate::retrieval::get_latest_for_entry;
     use crate::wire_element::WireElement;
     use ::fixt::prelude::*;

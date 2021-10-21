@@ -2,7 +2,7 @@
 use crate::datetime_queries::fetch_by_day::FetchByDay;
 #[double]
 use crate::datetime_queries::fetch_by_hour::FetchByHour;
-use crate::datetime_queries::utils::FetchEntriesTime;
+use crate::datetime_queries::inputs::FetchEntriesTime;
 #[double]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 use crate::wire_element::WireElement;
@@ -40,7 +40,7 @@ pub fn fetch_entries_by_time<
 #[cfg(test)]
 mod tests {
     use crate::crud::example::Example;
-    use crate::datetime_queries::utils::FetchEntriesTime;
+    use crate::datetime_queries::inputs::FetchEntriesTime;
     use crate::datetime_queries::{fetch_by_day, fetch_by_hour};
     use crate::retrieval::get_latest_for_entry;
     use crate::wire_element::WireElement;

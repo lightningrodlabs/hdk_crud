@@ -1,7 +1,8 @@
 use hdk::prelude::*;
 
 use super::fetchers::Fetchers;
-use super::utils::{is_valid_date_range, FetchEntriesTime};
+use super::utils::is_valid_date_range;
+use super::inputs::FetchEntriesTime;
 use crate::wire_element::WireElement;
 
 pub fn fetch_entries_in_time_range<
@@ -70,7 +71,7 @@ pub fn fetch_entries_in_time_range<
 mod tests {
     use crate::crud::example::Example;
     use crate::datetime_queries::fetchers::Fetchers;
-    use crate::datetime_queries::utils::FetchEntriesTime;
+    use crate::datetime_queries::inputs::FetchEntriesTime;
     use crate::datetime_queries::{
         fetch_by_day, fetch_by_hour, fetch_entries_from_day_to_day, fetch_entries_from_day_to_hour,
         fetch_entries_from_hour_to_day, fetch_entries_from_hour_to_hour,
