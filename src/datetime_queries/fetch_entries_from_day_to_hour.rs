@@ -58,6 +58,7 @@ impl FetchByDayHour {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use crate::crud::example::Example;
     use crate::retrieval::get_latest_for_entry;
