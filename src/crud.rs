@@ -12,7 +12,7 @@
 /// pub struct Test {
 ///     pub number: i32,
 /// }
-/// // ExampleSignal pops out of the crud! macro
+/// // TestSignal pops out of the crud! macro
 /// #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 /// #[serde(untagged)]
 /// pub enum TestSignalTypes {
