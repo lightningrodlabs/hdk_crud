@@ -1,18 +1,9 @@
-use crate::retrieval::*;
 use crate::wire_element::WireElement;
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
+use chrono::{Datelike, Duration, Timelike};
 use hdk::prelude::*;
-use mockall_double::double;
-use crate::datetime_queries::utils::{FetchEntriesTime, day_path_from_date, get_last_component_string, err};
-use std::convert::identity;
+use crate::datetime_queries::utils::FetchEntriesTime;
 use ::mockall::automock;
-use super::fetchers::{Fetchers};
-use crate::datetime_queries::utils::next_day;
-#[double]
-use crate::retrieval::get_latest_for_entry::GetLatestEntry;
-
-#[double]
-use crate::datetime_queries::fetch_by_hour::FetchByHour;
+use super::fetchers::Fetchers;
 
 pub struct FetchByDayHour {}
 #[cfg_attr(feature = "mock", automock)]
@@ -29,7 +20,7 @@ impl FetchByDayHour {
         let mut dt = start.to_date_time();
         let mut entries = Vec::new();
         let end = end.to_date_time();
-        let end_prev = end - Duration::days(1);
+        let end_prev = end - Duration::days(1); // this is to prevent fetch entries by day being called on the last day (we don't want all the hours on the last day)
         while dt < end_prev {
             entries.push(fetchers.day.fetch_entries_by_day::<EntryType>(
                 &fetchers.hour,
@@ -37,7 +28,7 @@ impl FetchByDayHour {
                 FetchEntriesTime::from_date_time(dt.clone()),
                 base_component.clone(),
             ));
-            dt = dt + Duration::days(1) + Duration::hours(0);
+            dt = dt + Duration::days(1);
         }
         while dt <= end {
             entries.push(fetchers.hour.fetch_entries_by_hour::<EntryType>(
@@ -67,8 +58,8 @@ mod tests {
     use hdk::prelude::*;
     use crate::datetime_queries::fetchers::Fetchers;
     use crate::datetime_queries::{fetch_entries_from_day_to_day, fetch_entries_from_hour_to_day, fetch_entries_from_day_to_hour, fetch_entries_from_hour_to_hour, fetch_by_day, fetch_by_hour};
-    use crate::datetime_queries::utils::{FetchEntriesTime, next_day};
-    use chrono::Duration;
+    use crate::datetime_queries::utils::FetchEntriesTime;
+    
     #[test]
     fn test_fetch_entries_from_day_to_hour(){
         let mock_day_to_day = fetch_entries_from_day_to_day:: MockFetchByDayDay::new();
@@ -76,9 +67,9 @@ mod tests {
         let mock_hour_to_day = fetch_entries_from_hour_to_day::MockFetchByHourDay::new();
         let mock_hour_to_hour = fetch_entries_from_hour_to_hour::MockFetchByHourHour::new();
         let mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
-
-        
-
+       
+        // case 1: fetch by day is called once, and fetch by hour is called 3 times
+        // another case to try out would be same start and end day, so only fetch by hour is called
         let start_time = FetchEntriesTime {
             year: 2021,
             month: 10 as u32,

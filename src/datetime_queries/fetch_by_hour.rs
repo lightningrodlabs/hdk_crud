@@ -1,11 +1,7 @@
-use crate::datetime_queries::utils::{
-    day_path_from_date, get_last_component_string, hour_path_from_date, FetchEntriesTime,
-};
-use crate::retrieval::*;
+use crate::datetime_queries::utils::hour_path_from_date;
 use crate::wire_element::WireElement;
 #[cfg(feature = "mock")]
 use ::mockall::automock;
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
 use hdk::prelude::*;
 use mockall_double::double;
 use std::convert::identity;
@@ -47,15 +43,10 @@ impl FetchByHour {
 #[cfg(test)]
 mod tests {
     use crate::crud::example::Example;
-    use crate::datetime_queries::fetch_by_hour;
-    use crate::datetime_queries::utils::FetchEntriesTime;
     use crate::retrieval::get_latest_for_entry;
     use crate::wire_element::WireElement;
     use ::fixt::prelude::*;
-    use assert_matches::assert_matches;
-    use hdk::hash_path::path::NAME;
     use hdk::prelude::*;
-    use holochain_types::prelude::{ElementFixturator, LinkTagFixturator};
 
     #[test]
     fn test_fetch_entries_by_hour() {

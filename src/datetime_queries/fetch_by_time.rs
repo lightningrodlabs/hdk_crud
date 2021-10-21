@@ -2,24 +2,13 @@
 use crate::datetime_queries::fetch_by_day::FetchByDay;
 #[double]
 use crate::datetime_queries::fetch_by_hour::FetchByHour;
-use crate::datetime_queries::utils::{
-    day_path_from_date, get_last_component_string, hour_path_from_date, FetchEntriesTime,
-};
+use crate::datetime_queries::utils::FetchEntriesTime;
 #[double]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
-use crate::retrieval::*;
 use crate::wire_element::WireElement;
 #[cfg(feature = "mock")]
-use ::mockall::automock;
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
 use hdk::prelude::*;
 use mockall_double::double;
-use std::convert::identity;
-
-pub struct TimeFetcher {
-    fetch_by_day: FetchByDay,
-    fetch_by_hour: FetchByHour,
-}
 
 pub fn fetch_entries_by_time<
     EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
@@ -56,10 +45,7 @@ mod tests {
     use crate::retrieval::get_latest_for_entry;
     use crate::wire_element::WireElement;
     use ::fixt::prelude::*;
-    use assert_matches::assert_matches;
-    use hdk::hash_path::path::NAME;
     use hdk::prelude::*;
-    use holochain_types::prelude::{ElementFixturator, LinkTagFixturator};
 
     #[test]
     fn test_fetch_by_time_day() {
@@ -94,8 +80,8 @@ mod tests {
             .times(1)
             .return_const(Ok(wire_vec.clone()));
 
-        let mut fetch_by_hour = fetch_by_hour::MockFetchByHour::new();
-        let mut get_latest_entry = get_latest_for_entry::MockGetLatestEntry::new();
+        let fetch_by_hour = fetch_by_hour::MockFetchByHour::new();
+        let get_latest_entry = get_latest_for_entry::MockGetLatestEntry::new();
         let result = super::fetch_entries_by_time::<Example>(
             &mock_fetch_by_day,
             &fetch_by_hour,
@@ -125,7 +111,7 @@ mod tests {
             entry: Example { number: 1 },
         };
         let wire_vec: Vec<WireElement<Example>> = vec![wire_element];
-        let mut mock_fetch_by_day = fetch_by_day::MockFetchByDay::new();
+        let mock_fetch_by_day = fetch_by_day::MockFetchByDay::new();
 
         let mut mock_fetch_by_hour = fetch_by_hour::MockFetchByHour::new();
         mock_fetch_by_hour
@@ -140,7 +126,7 @@ mod tests {
             )
             .times(1)
             .return_const(Ok(wire_vec.clone()));
-        let mut get_latest_entry = get_latest_for_entry::MockGetLatestEntry::new();
+        let get_latest_entry = get_latest_for_entry::MockGetLatestEntry::new();
         let result = super::fetch_entries_by_time::<Example>(
             &mock_fetch_by_day,
             &mock_fetch_by_hour,

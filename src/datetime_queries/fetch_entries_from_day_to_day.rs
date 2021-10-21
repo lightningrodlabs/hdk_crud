@@ -1,12 +1,6 @@
-use crate::retrieval::*;
 use crate::wire_element::WireElement;
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
+use chrono::Duration;
 use hdk::prelude::*;
-use mockall_double::double;
-
-use crate::datetime_queries::{fetch_by_day::FetchByDay, fetch_by_hour::FetchByHour};
-use crate::retrieval::get_latest_for_entry::GetLatestEntry;
-use std::convert::identity;
 use ::mockall::automock;
 use super::fetchers::Fetchers;
 use super::utils::FetchEntriesTime;
@@ -61,8 +55,6 @@ mod tests {
         let mock_hour_to_hour = fetch_entries_from_hour_to_hour::MockFetchByHourHour::new();
         let mock_by_hour = fetch_by_hour::MockFetchByHour::new();
         let mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
-
-        
 
         let start_time = FetchEntriesTime {
             year: 2021,

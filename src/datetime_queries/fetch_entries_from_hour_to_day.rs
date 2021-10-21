@@ -1,15 +1,8 @@
-use crate::retrieval::*;
 use crate::wire_element::WireElement;
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
+use chrono::{Datelike, Duration, Timelike};
 use hdk::prelude::*;
-use mockall_double::double;
-
-use crate::datetime_queries::{fetch_by_day::FetchByDay, fetch_by_hour::FetchByHour};
-use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 use ::mockall::automock;
-use std::convert::identity;
-
-use super::fetchers::{Fetchers};
+use super::fetchers::Fetchers;
 use super::utils::{FetchEntriesTime,next_day};
 
 pub struct FetchByHourDay {}
@@ -65,8 +58,7 @@ mod tests {
     use hdk::prelude::*;
     use crate::datetime_queries::fetchers::Fetchers;
     use crate::datetime_queries::{fetch_entries_from_day_to_day, fetch_entries_from_hour_to_day, fetch_entries_from_day_to_hour, fetch_entries_from_hour_to_hour, fetch_by_day, fetch_by_hour};
-    use crate::datetime_queries::utils::{FetchEntriesTime, next_day};
-    use chrono::Duration;
+    use crate::datetime_queries::utils::FetchEntriesTime;
     #[test]
     fn test_fetch_entries_from_day_to_hour(){
         let mock_day_to_day = fetch_entries_from_day_to_day:: MockFetchByDayDay::new();

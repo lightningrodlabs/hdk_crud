@@ -1,10 +1,7 @@
-use crate::retrieval::*;
 use crate::wire_element::WireElement;
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
 use hdk::prelude::*;
 use mockall_double::double;
 use crate::datetime_queries::utils::{FetchEntriesTime, day_path_from_date, get_last_component_string, err};
-use std::convert::identity;
 use ::mockall::automock;
 #[double]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
@@ -54,14 +51,13 @@ impl FetchByDay {
 mod tests {
     use ::fixt::prelude::*;
     use hdk::hash_path::path::NAME;
-    use holochain_types::prelude::{ElementFixturator, LinkTagFixturator};
+    use holochain_types::prelude::ElementFixturator;
     use hdk::prelude::*;
     use crate::datetime_queries::fetch_by_hour;
     use crate::datetime_queries::utils::FetchEntriesTime;
     use crate::wire_element::WireElement;
     use crate::crud::example::Example;
     use crate::retrieval::get_latest_for_entry;
-    use assert_matches::assert_matches;
 
     #[test]
     fn test_fetch_entries_by_day() {

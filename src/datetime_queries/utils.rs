@@ -1,12 +1,5 @@
-use crate::retrieval::*;
-use crate::wire_element::WireElement;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
 use hdk::prelude::*;
-use mockall_double::double;
-
-use std::convert::identity;
-use crate::retrieval::get_latest_for_entry::GetLatestEntry;
-use crate::datetime_queries::{fetch_by_day::FetchByDay, fetch_by_hour::FetchByHour};
 
 pub fn is_valid_date_range(start: FetchEntriesTime, end: FetchEntriesTime) -> Result<(), WasmError> {
     match start.to_date_time() < end.to_date_time() {

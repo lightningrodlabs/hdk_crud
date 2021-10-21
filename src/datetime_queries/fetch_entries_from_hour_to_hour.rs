@@ -1,19 +1,9 @@
 use super::fetchers::Fetchers;
 use super::utils::{FetchEntriesTime, next_day};
 use ::mockall::automock;
-use crate::retrieval::*;
 use crate::wire_element::WireElement;
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
+use chrono::{Datelike, Duration, Timelike};
 use hdk::prelude::*;
-use mockall_double::double;
-use crate::datetime_queries::utils::{day_path_from_date, get_last_component_string, err};
-use std::convert::identity;
-
-#[double]
-use crate::retrieval::get_latest_for_entry::GetLatestEntry;
-
-#[double]
-use crate::datetime_queries::fetch_by_hour::FetchByHour;
 
 pub struct FetchByHourHour {}
 #[cfg_attr(feature = "mock", automock)]
@@ -87,8 +77,7 @@ mod tests {
     use hdk::prelude::*;
     use crate::datetime_queries::fetchers::Fetchers;
     use crate::datetime_queries::{fetch_entries_from_day_to_day, fetch_entries_from_hour_to_day, fetch_entries_from_day_to_hour, fetch_entries_from_hour_to_hour, fetch_by_day, fetch_by_hour};
-    use crate::datetime_queries::utils::{FetchEntriesTime, next_day};
-    use chrono::Duration;
+    use crate::datetime_queries::utils::FetchEntriesTime;
     #[test]
     fn test_fetch_entries_from_day_to_hour(){
         // cover at least three main cases: when start and end are on the same day
@@ -105,6 +94,7 @@ mod tests {
         let mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
         let mock_by_day = fetch_by_day::MockFetchByDay::new();
 
+        // expect fetch by hour to be called 4 times
         let start_time = FetchEntriesTime {
             year: 2021,
             month: 10 as u32,
@@ -166,6 +156,7 @@ mod tests {
         let mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
         let mock_by_day = fetch_by_day::MockFetchByDay::new();
 
+        // expect fetch by hour to be called 4 times, fetch by day to be called 0 times
         let start_time = FetchEntriesTime {
             year: 2021,
             month: 10 as u32,
@@ -226,6 +217,7 @@ mod tests {
         let mock_hour_to_hour = fetch_entries_from_hour_to_hour::MockFetchByHourHour::new();
         let mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
 
+        // expect fetch by hour to be called 3 times, fetch by day to be called 4 times
         let start_time = FetchEntriesTime {
             year: 2021,
             month: 10 as u32,
