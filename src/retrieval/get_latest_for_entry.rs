@@ -24,7 +24,9 @@ impl GetLatestEntry {
     /// to act consistently, almost acting as an "id" in a centralized system.
     /// It simplifies traversal of the update tree, since all updates
     /// made by the client can reference the original, instead of updates reference updates
-    pub fn get_latest_for_entry<T: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>>(
+    pub fn get_latest_for_entry<
+        T: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
+    >(
         &self,
         entry_hash: EntryHash,
         get_options: GetOptions,
@@ -61,7 +63,9 @@ impl GetLatestEntry {
                             // instead of the updated, in our case
                             Header::Update(update) => update.original_header_address.clone(),
                             Header::Create(_) => element.header_address().clone(),
-                            _ => unreachable!("Can't have returned a header for a nonexistent entry"),
+                            _ => {
+                                unreachable!("Can't have returned a header for a nonexistent entry")
+                            }
                         },
                         element.header().entry_hash().unwrap().to_owned(),
                     ))),

@@ -1,4 +1,3 @@
-use mockall_double::double;
 #[double]
 use super::{
     fetch_by_day::FetchByDay, fetch_by_hour::FetchByHour,
@@ -6,6 +5,7 @@ use super::{
     fetch_entries_from_hour_to_day::FetchByHourDay,
     fetch_entries_from_hour_to_hour::FetchByHourHour,
 };
+use mockall_double::double;
 
 #[double]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;

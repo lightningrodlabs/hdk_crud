@@ -1,3 +1,5 @@
+use chrono::{DateTime, NaiveDateTime, Utc};
+use hdk::prelude::ExternResult;
 /// A macro to go quick and easy
 /// from having just a Holochain entry definition
 /// to having a full create-read-update-delete set of
@@ -33,8 +35,6 @@
 /// );
 /// ```
 use hdk::time::sys_time;
-use hdk::prelude::ExternResult;
-use chrono::{DateTime, Utc, NaiveDateTime};
 
 fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
     let time = sys_time()?.as_seconds_and_nanos();
@@ -62,7 +62,7 @@ macro_rules! crud {
             Path::from([<$i:upper _PATH>])
           }
 
-          
+
 
 
           #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
@@ -93,20 +93,20 @@ macro_rules! crud {
               Some(base_component) => {
                 // create a time_path
                 let date: ::chrono::DateTime<::chrono::Utc> = $crate::crud::now_date_time()?;
-                
+
                 let time_path = $crate::datetime_queries::utils::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
 
                 time_path.ensure()?;
                 create_link(time_path.hash()?,entry_hash.clone(), ())?;
               }
             }
-           
+
             let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
               entry,
               header_hash: ::holo_hash::HeaderHashB64::new(address),
               entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
             };
-            
+
             if (send_signal) {
               let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
                 entry_type: $path.to_string(),

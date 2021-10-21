@@ -1,10 +1,10 @@
-pub mod fetch_in_time_range;
 pub mod fetch_by_day;
 pub mod fetch_by_hour;
 pub mod fetch_by_time;
-pub mod utils;
 pub mod fetch_entries_from_day_to_day;
 pub mod fetch_entries_from_day_to_hour;
 pub mod fetch_entries_from_hour_to_day;
 pub mod fetch_entries_from_hour_to_hour;
+pub mod fetch_in_time_range;
 pub mod fetchers;
+pub mod utils;

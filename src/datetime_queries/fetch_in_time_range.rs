@@ -1,9 +1,8 @@
 use hdk::prelude::*;
 
-use crate::wire_element::WireElement;
 use super::fetchers::Fetchers;
-use super::utils::{FetchEntriesTime, is_valid_date_range};
-
+use super::utils::{is_valid_date_range, FetchEntriesTime};
+use crate::wire_element::WireElement;
 
 pub fn fetch_entries_in_time_range<
     EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
@@ -17,20 +16,24 @@ pub fn fetch_entries_in_time_range<
     match start_time.hour {
         None => {
             match end_time.hour {
-                None => fetchers.day_to_day.fetch_entries_from_day_to_day::<EntryType>(
-                    fetchers,
-                    start_time.clone(),
-                    end_time.clone(),
-                    base_component,
-                ),
-                Some(_) => {
-                    //day to hour: loop from 1st day to 2nd last day, then loop through hours in last day
-                    fetchers.day_to_hour.fetch_entries_from_day_to_hour::<EntryType>(
+                None => fetchers
+                    .day_to_day
+                    .fetch_entries_from_day_to_day::<EntryType>(
                         fetchers,
                         start_time.clone(),
                         end_time.clone(),
                         base_component,
-                    )
+                    ),
+                Some(_) => {
+                    //day to hour: loop from 1st day to 2nd last day, then loop through hours in last day
+                    fetchers
+                        .day_to_hour
+                        .fetch_entries_from_day_to_hour::<EntryType>(
+                            fetchers,
+                            start_time.clone(),
+                            end_time.clone(),
+                            base_component,
+                        )
                 }
             }
         }
@@ -38,21 +41,25 @@ pub fn fetch_entries_in_time_range<
             match end_time.hour {
                 None => {
                     // hour to day: loop through hours on first day, then 2nd day to last day
-                    fetchers.hour_to_day.fetch_entries_from_hour_to_day::<EntryType>(
-                        fetchers,
-                        start_time.clone(),
-                        end_time.clone(),
-                        base_component,
-                    )
+                    fetchers
+                        .hour_to_day
+                        .fetch_entries_from_hour_to_day::<EntryType>(
+                            fetchers,
+                            start_time.clone(),
+                            end_time.clone(),
+                            base_component,
+                        )
                 }
                 Some(_) => {
                     // hour to hour: loop through hours on first day, then 2nd day to 2nd last day, then hours on last day
-                    fetchers.hour_to_hour.fetch_entries_from_hour_to_hour::<EntryType>(
-                        fetchers,
-                        start_time.clone(),
-                        end_time.clone(),
-                        base_component,
-                    )
+                    fetchers
+                        .hour_to_hour
+                        .fetch_entries_from_hour_to_hour::<EntryType>(
+                            fetchers,
+                            start_time.clone(),
+                            end_time.clone(),
+                            base_component,
+                        )
                 }
             }
         }
@@ -62,14 +69,16 @@ pub fn fetch_entries_in_time_range<
 #[cfg(test)]
 mod tests {
     use crate::crud::example::Example;
+    use crate::datetime_queries::fetchers::Fetchers;
+    use crate::datetime_queries::utils::FetchEntriesTime;
+    use crate::datetime_queries::{
+        fetch_by_day, fetch_by_hour, fetch_entries_from_day_to_day, fetch_entries_from_day_to_hour,
+        fetch_entries_from_hour_to_day, fetch_entries_from_hour_to_hour,
+    };
     use crate::retrieval::get_latest_for_entry;
     use crate::wire_element::WireElement;
     use ::fixt::prelude::*;
     use hdk::prelude::*;
-    use crate::datetime_queries::fetchers::Fetchers;
-    use crate::datetime_queries::{fetch_entries_from_day_to_day, fetch_entries_from_hour_to_day, fetch_entries_from_day_to_hour, fetch_entries_from_hour_to_hour, fetch_by_day, fetch_by_hour};
-    use crate::datetime_queries::utils::FetchEntriesTime;
-    
 
     #[test]
     fn test_fetch_in_time_range() {
@@ -79,8 +88,6 @@ mod tests {
         let mock_by_day = fetch_by_day::MockFetchByDay::new();
         let mock_by_hour = fetch_by_hour::MockFetchByHour::new();
         let mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
-
-        
 
         // ==================================================
         // day to day test
@@ -116,7 +123,7 @@ mod tests {
             )
             .times(1)
             .return_const(Ok(wire_vec.clone()));
-        
+
         let mock_fetchers = Fetchers {
             day_to_day: mock_day_to_day,
             day_to_hour: mock_day_to_hour,
@@ -126,8 +133,13 @@ mod tests {
             hour: mock_by_hour,
             get_latest: mock_get_latest,
         };
-        
-        let result = super::fetch_entries_in_time_range::<Example>(&mock_fetchers, start_time, end_time, base_component.clone());
+
+        let result = super::fetch_entries_in_time_range::<Example>(
+            &mock_fetchers,
+            start_time,
+            end_time,
+            base_component.clone(),
+        );
         assert_eq!(result, Ok(wire_vec.clone()));
         // ==================================================
         // day to hour test
@@ -163,7 +175,7 @@ mod tests {
             )
             .times(1)
             .return_const(Ok(wire_vec.clone()));
-        
+
         let mock_fetchers = Fetchers {
             day_to_day: mock_day_to_day,
             day_to_hour: mock_day_to_hour,
@@ -173,8 +185,13 @@ mod tests {
             hour: mock_by_hour,
             get_latest: mock_get_latest,
         };
-        
-        let result = super::fetch_entries_in_time_range::<Example>(&mock_fetchers, start_time, end_time, base_component.clone());
+
+        let result = super::fetch_entries_in_time_range::<Example>(
+            &mock_fetchers,
+            start_time,
+            end_time,
+            base_component.clone(),
+        );
         assert_eq!(result, Ok(wire_vec.clone()));
         // ==================================================
         // hour to day test
@@ -210,7 +227,7 @@ mod tests {
             )
             .times(1)
             .return_const(Ok(wire_vec.clone()));
-        
+
         let mock_fetchers = Fetchers {
             day_to_day: mock_day_to_day,
             day_to_hour: mock_day_to_hour,
@@ -220,8 +237,13 @@ mod tests {
             hour: mock_by_hour,
             get_latest: mock_get_latest,
         };
-        
-        let result = super::fetch_entries_in_time_range::<Example>(&mock_fetchers, start_time, end_time, base_component.clone());
+
+        let result = super::fetch_entries_in_time_range::<Example>(
+            &mock_fetchers,
+            start_time,
+            end_time,
+            base_component.clone(),
+        );
         assert_eq!(result, Ok(wire_vec.clone()));
         // ==================================================
         // hour to day test
@@ -257,7 +279,7 @@ mod tests {
             )
             .times(1)
             .return_const(Ok(wire_vec.clone()));
-        
+
         let mock_fetchers = Fetchers {
             day_to_day: mock_day_to_day,
             day_to_hour: mock_day_to_hour,
@@ -267,8 +289,13 @@ mod tests {
             hour: mock_by_hour,
             get_latest: mock_get_latest,
         };
-        
-        let result = super::fetch_entries_in_time_range::<Example>(&mock_fetchers, start_time, end_time, base_component.clone());
+
+        let result = super::fetch_entries_in_time_range::<Example>(
+            &mock_fetchers,
+            start_time,
+            end_time,
+            base_component.clone(),
+        );
         assert_eq!(result, Ok(wire_vec.clone()));
     }
 }

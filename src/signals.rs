@@ -1,5 +1,5 @@
-use holo_hash::HeaderHashB64;
 use hdk::prelude::*;
+use holo_hash::HeaderHashB64;
 use std::fmt;
 
 use crate::wire_element::WireElement;
@@ -114,7 +114,7 @@ mod tests {
                 access: ().into(),
                 functions,
             }),
-            ChainTopOrdering::Strict
+            ChainTopOrdering::Strict,
         );
         let header_hash = fixt!(HeaderHash);
         mock_hdk

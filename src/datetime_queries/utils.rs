@@ -1,7 +1,10 @@
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
 use hdk::prelude::*;
 
-pub fn is_valid_date_range(start: FetchEntriesTime, end: FetchEntriesTime) -> Result<(), WasmError> {
+pub fn is_valid_date_range(
+    start: FetchEntriesTime,
+    end: FetchEntriesTime,
+) -> Result<(), WasmError> {
     match start.to_date_time() < end.to_date_time() {
         true => Ok(()),
         false => Err(err("invalid date range")),
@@ -76,4 +79,3 @@ pub fn hour_path_from_date(
         base_component, year, month, day, hour
     ))
 }
-

@@ -1,10 +1,10 @@
 use std::convert::identity;
 
-use holo_hash::EntryHashB64;
 use hdk::prelude::*;
+use holo_hash::EntryHashB64;
 
-use crate::wire_element::WireElement;
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
+use crate::wire_element::WireElement;
 /// A triple of an Entry along with the HeaderHash
 /// of that committed entry and the EntryHash of the entry
 pub type EntryAndHash<T> = (T, HeaderHash, EntryHash);
@@ -22,9 +22,7 @@ pub fn get_header_hash(signed_header_hashed: element::SignedHeaderHashed) -> Hea
 /// Fetch and deserialize all the entries of a certain type that are linked to an EntryHash.
 /// Useful for having a Path that you link everything to. This also internally calls [get_latest_for_entry] meaning
 /// that the contents for each entry returned are automatically the latest contents.
-pub fn fetch_links<
-    EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
->(
+pub fn fetch_links<EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>>(
     entry_hash: EntryHash,
     get_options: GetOptions,
 ) -> Result<Vec<WireElement<EntryType>>, WasmError> {

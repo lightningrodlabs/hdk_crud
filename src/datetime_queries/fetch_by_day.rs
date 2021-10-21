@@ -1,10 +1,12 @@
-use crate::wire_element::WireElement;
-use hdk::prelude::*;
-use mockall_double::double;
-use crate::datetime_queries::utils::{FetchEntriesTime, day_path_from_date, get_last_component_string, err};
-use ::mockall::automock;
+use crate::datetime_queries::utils::{
+    day_path_from_date, err, get_last_component_string, FetchEntriesTime,
+};
 #[double]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
+use crate::wire_element::WireElement;
+use ::mockall::automock;
+use hdk::prelude::*;
+use mockall_double::double;
 
 #[double]
 use crate::datetime_queries::fetch_by_hour::FetchByHour;
@@ -13,7 +15,9 @@ use crate::datetime_queries::fetch_by_hour::FetchByHour;
 pub struct FetchByDay {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByDay {
-    pub fn fetch_entries_by_day<EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>>(
+    pub fn fetch_entries_by_day<
+        EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
+    >(
         &self,
         fetch_by_hour: &FetchByHour,
         get_latest_entry: &GetLatestEntry,
@@ -21,7 +25,7 @@ impl FetchByDay {
         base_component: String,
     ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
         let path = day_path_from_date(base_component.clone(), time.year, time.month, time.day);
-        // TODO: wrap in path.exists
+        // TODO: wrap in path.exists which would add extra hdk calls to be mocked in the test
         let children = path.children()?;
 
         let entries = children
@@ -49,15 +53,15 @@ impl FetchByDay {
 
 #[cfg(test)]
 mod tests {
-    use ::fixt::prelude::*;
-    use hdk::hash_path::path::NAME;
-    use holochain_types::prelude::ElementFixturator;
-    use hdk::prelude::*;
+    use crate::crud::example::Example;
     use crate::datetime_queries::fetch_by_hour;
     use crate::datetime_queries::utils::FetchEntriesTime;
-    use crate::wire_element::WireElement;
-    use crate::crud::example::Example;
     use crate::retrieval::get_latest_for_entry;
+    use crate::wire_element::WireElement;
+    use ::fixt::prelude::*;
+    use hdk::hash_path::path::NAME;
+    use hdk::prelude::*;
+    use holochain_types::prelude::ElementFixturator;
 
     #[test]
     fn test_fetch_entries_by_day() {
@@ -99,7 +103,7 @@ mod tests {
             path_hash,
             Some(holochain_zome_types::link::LinkTag::new(NAME)),
         )];
-        
+
         // creating an expected output of get_links, which is a Vec<Links>, and Links is a Vec<Link>
         // since the link tag is used to get the hour component from the path, it must be constructed properly
         let link_tag: LinkTag = LinkTag::try_from(&Path::from("create.2021-10-15.10")).unwrap();
@@ -111,11 +115,11 @@ mod tests {
             create_link_hash: fixt![HeaderHash],
         };
 
-        // here we are assuming there is only one hour component to the day path, however if we wanted to 
+        // here we are assuming there is only one hour component to the day path, however if we wanted to
         // make sure the code properly cycles through each hour component, we would add extra Link elements
         // to the below vector
         let get_links_output = vec![Links::from(vec![link_output])];
-        
+
         mock_hdk
             .expect_get_links()
             .with(mockall::predicate::eq(get_links_input))
@@ -133,7 +137,7 @@ mod tests {
         let hour_entry = WireElement::<Example> {
             header_hash: fixt![HeaderHashB64],
             entry_hash: fixt![EntryHashB64],
-            entry: Example {number: 1},
+            entry: Example { number: 1 },
         };
         let hour_entries: Vec<WireElement<Example>> = vec![hour_entry];
         // set up a mock of fetch_entries_by_hour
@@ -143,7 +147,7 @@ mod tests {
             .expect_fetch_entries_by_hour::<Example>()
             .with(
                 // MockGetLatestEntry does not implement PartialEq so can't be compared
-                mockall::predicate::always(), 
+                mockall::predicate::always(),
                 mockall::predicate::eq(fetch_time.year),
                 mockall::predicate::eq(fetch_time.month),
                 mockall::predicate::eq(fetch_time.day),
@@ -158,8 +162,8 @@ mod tests {
         let result = fetch_by_day.fetch_entries_by_day::<Example>(
             &mock_queries,
             &mock_latest_entry,
-            fetch_time, 
-            base_component
+            fetch_time,
+            base_component,
         );
         assert_eq!(result, Ok(hour_entries));
     }
