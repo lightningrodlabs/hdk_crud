@@ -65,13 +65,10 @@ mod tests {
     use crate::retrieval::get_latest_for_entry;
     use crate::wire_element::WireElement;
     use ::fixt::prelude::*;
-    use assert_matches::assert_matches;
-    use hdk::hash_path::path::NAME;
     use hdk::prelude::*;
-    use holochain_types::prelude::{ElementFixturator, LinkTagFixturator};
     use crate::datetime_queries::fetchers::Fetchers;
     use crate::datetime_queries::{fetch_entries_from_day_to_day, fetch_entries_from_hour_to_day, fetch_entries_from_day_to_hour, fetch_entries_from_hour_to_hour, fetch_by_day, fetch_by_hour};
-    use crate::datetime_queries::utils::{FetchEntriesTime, is_valid_date_range};
+    use crate::datetime_queries::utils::FetchEntriesTime;
     
 
     #[test]
