@@ -69,7 +69,7 @@ macro_rules! crud {
             let address = host_call::<CreateInput, HeaderHash>(
               __create,
               CreateInput::new(
-                entry.entry_def().id,
+                entry::entry_def().id,
                 Entry::App(entry.clone().try_into()?),
                 ChainTopOrdering::Relaxed,
               ),
@@ -141,7 +141,7 @@ macro_rules! crud {
               UpdateInput::new(
                 update.header_hash.clone().into(), //convert to HeaderHash from B64
                 CreateInput::new(
-                  update.entry.entry_def().id,
+                  update.entry::entry_def().id,
                   Entry::App(update.entry.clone().try_into()?),
                   ChainTopOrdering::Relaxed,
                 ),
