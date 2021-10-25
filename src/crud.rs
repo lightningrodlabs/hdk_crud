@@ -66,13 +66,12 @@ macro_rules! crud {
           #[doc="This will be called with `send_signal` as `true` by [create_" $i "]"]
           pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
             // let address = create_entry(&entry)?;
-            let address = host_call::<CreateInput, HeaderHash>(
-              __create,
+            let address = create(
               CreateInput::new(
-                entry::entry_def().id,
+                EntryDefId::App($path.to_string()),
                 Entry::App(entry.clone().try_into()?),
                 ChainTopOrdering::Relaxed,
-              ),
+              )
             )?;
             let entry_hash = hash_entry(&entry)?;
             let path = [< get_ $i _path >]();
@@ -135,16 +134,12 @@ macro_rules! crud {
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            // update_entry(update.header_hash.clone().into(), &update.entry)?;
-            host_call::<UpdateInput, HeaderHash>(
-              __update,
-              UpdateInput::new(
-                update.header_hash.clone().into(), //convert to HeaderHash from B64
-                CreateInput::new(
-                  update.entry::entry_def().id,
-                  Entry::App(update.entry.clone().try_into()?),
-                  ChainTopOrdering::Relaxed,
-                ),
+            hdk::entry::update(
+              update.header_hash.clone().into(),
+              CreateInput::new(
+                EntryDefId::App($path.to_string()),
+                Entry::App(update.entry.clone().try_into()?),
+                ChainTopOrdering::Relaxed,
               ),
             )?;
             let entry_address = hash_entry(&update.entry)?;
@@ -273,7 +268,7 @@ pub mod example {
     pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
         Ok(Vec::new())
     }
-
+    
     crud!(
         Example,
         example,
@@ -286,7 +281,6 @@ pub mod example {
 #[cfg(test)]
 mod tests {
     use super::example::*;
-
     #[test]
     fn it_works() {
         let e: Example = Example { number: 2 };
