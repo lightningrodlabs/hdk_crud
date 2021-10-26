@@ -63,9 +63,10 @@ macro_rules! crud {
           /// This will create an entry and link it off the main Path.
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+          /// uses `ChainTopOrdering::Relaxed` such that multiple creates can be committed in parallel
           #[doc="This will be called with `send_signal` as `true` by [create_" $i "]"]
           pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            // let address = create_entry(&entry)?;
+            // calling create instead of create_entry to be able to indicate relaxed chain ordering
             let address = create(
               CreateInput::new(
                 EntryDefId::App($path.to_string()),
@@ -133,7 +134,9 @@ macro_rules! crud {
           /// This will add an update to an entry.
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+          /// uses `ChainTopOrdering::Relaxed` such that multiple updates can be committed in parallel
           pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
+            // calling update instead of update_entry to be able to indicate relaxed chain ordering
             hdk::entry::update(
               update.header_hash.clone().into(),
               CreateInput::new(
