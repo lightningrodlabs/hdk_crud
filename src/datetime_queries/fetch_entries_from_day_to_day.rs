@@ -1,9 +1,12 @@
 use super::fetchers::Fetchers;
 use super::inputs::FetchEntriesTime;
 use crate::wire_element::WireElement;
-use ::mockall::automock;
 use chrono::Duration;
 use hdk::prelude::*;
+
+#[cfg(feature = "mock")]
+use ::mockall::automock;
+
 #[derive(Clone)]
 pub struct FetchByDayDay {}
 #[cfg_attr(feature = "mock", automock)]

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Timelike, Utc};
+use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
 use hdk::prelude::*;
 use super::inputs::FetchEntriesTime;
 

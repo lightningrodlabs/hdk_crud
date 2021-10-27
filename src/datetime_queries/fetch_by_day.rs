@@ -1,15 +1,16 @@
-use crate::datetime_queries::utils::{
-    day_path_from_date, err, get_last_component_string,
-};
 use crate::datetime_queries::inputs::FetchEntriesTime;
-#[double]
-use crate::retrieval::get_latest_for_entry::GetLatestEntry;
+use crate::datetime_queries::utils::{day_path_from_date, err, get_last_component_string};
 use crate::wire_element::WireElement;
-use ::mockall::automock;
 use hdk::prelude::*;
+
+#[cfg(feature = "mock")]
+use ::mockall::automock;
+#[cfg(feature = "mock")]
 use mockall_double::double;
 
-#[double]
+#[cfg_attr(feature = "mock", double)]
+use crate::retrieval::get_latest_for_entry::GetLatestEntry;
+#[cfg_attr(feature = "mock", double)]
 use crate::datetime_queries::fetch_by_hour::FetchByHour;
 
 #[derive(Clone)]

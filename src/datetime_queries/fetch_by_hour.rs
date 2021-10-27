@@ -1,12 +1,14 @@
 use crate::datetime_queries::utils::hour_path_from_date;
 use crate::wire_element::WireElement;
+use hdk::prelude::*;
+
 #[cfg(feature = "mock")]
 use ::mockall::automock;
-use hdk::prelude::*;
+#[cfg(feature = "mock")]
 use mockall_double::double;
 use std::convert::identity;
 
-#[double]
+#[cfg_attr(feature = "mock", double)]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 pub struct FetchByHour {}
 #[cfg_attr(feature = "mock", automock)]

@@ -4,6 +4,7 @@ use crate::retrieval::retrieval::*;
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
+
 /// A triple of an Entry along with the HeaderHash
 /// of that committed entry and the EntryHash of the entry
 pub type EntryAndHash<T> = (T, HeaderHash, EntryHash);

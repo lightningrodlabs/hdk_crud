@@ -2,9 +2,11 @@ use super::fetchers::Fetchers;
 use super::utils::next_day;
 use super::inputs::FetchEntriesTime;
 use crate::wire_element::WireElement;
-use ::mockall::automock;
 use chrono::{Datelike, Duration, Timelike};
 use hdk::prelude::*;
+
+#[cfg(feature = "mock")]
+use ::mockall::automock;
 
 pub struct FetchByHourHour {}
 #[cfg_attr(feature = "mock", automock)]
