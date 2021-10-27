@@ -1,3 +1,5 @@
+use chrono::{DateTime, NaiveDateTime, Utc};
+use hdk::prelude::ExternResult;
 /// A macro to go quick and easy
 /// from having just a Holochain entry definition
 /// to having a full create-read-update-delete set of
@@ -32,12 +34,23 @@
 ///     convert_to_receiver_signal,
 /// );
 /// ```
+use hdk::time::sys_time;
+
+fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
+    let time = sys_time()?.as_seconds_and_nanos();
+
+    let date: DateTime<Utc> =
+        DateTime::from_utc(NaiveDateTime::from_timestamp(time.0, time.1), Utc);
+    Ok(date)
+}
+
 #[macro_export]
 macro_rules! crud {
     (
       $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $convert_to_receiver_signal:ident
     ) => {
         ::paste::paste! {
+          use ::chrono::{Datelike, Timelike};
           /// This is the &str that can be passed into Path to
           /// find all the entries created using these create functions
           /// which are linked off of this Path.
@@ -48,6 +61,9 @@ macro_rules! crud {
           pub fn [<get_ $i _path>]() -> Path {
             Path::from([<$i:upper _PATH>])
           }
+
+
+
 
           #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
@@ -65,7 +81,7 @@ macro_rules! crud {
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           /// uses `ChainTopOrdering::Relaxed` such that multiple creates can be committed in parallel
           #[doc="This will be called with `send_signal` as `true` by [create_" $i "]"]
-          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
+          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool, add_time_path: Option<String>) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
             // calling create instead of create_entry to be able to indicate relaxed chain ordering
             let address = create(
               CreateInput::new(
@@ -79,11 +95,26 @@ macro_rules! crud {
             path.ensure()?;
             let path_hash = path.hash()?;
             create_link(path_hash, entry_hash.clone(), ())?;
+
+            match add_time_path {
+              None => (),
+              Some(base_component) => {
+                // create a time_path
+                let date: ::chrono::DateTime<::chrono::Utc> = $crate::crud::now_date_time()?;
+
+                let time_path = $crate::datetime_queries::utils::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
+
+                time_path.ensure()?;
+                create_link(time_path.hash()?,entry_hash.clone(), ())?;
+              }
+            }
+
             let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
               entry,
               header_hash: ::holo_hash::HeaderHashB64::new(address),
               entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
             };
+
             if (send_signal) {
               let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
                 entry_type: $path.to_string(),
@@ -106,15 +137,16 @@ macro_rules! crud {
           #[doc="This just calls [inner_create_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            [<inner_create_ $i>](entry, true)
+            [<inner_create_ $i>](entry, true, None)
           }
 
           /*
             READ
           */
           /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
-          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::retrieval::FetchOptions, get_options: GetOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
-            let entries = $crate::retrieval::fetch_entries::<$crud_type>([< get_ $i _path >](), fetch_options, get_options)?;
+          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::retrieval::retrieval::FetchOptions, get_options: GetOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
+            let get_latest = $crate::retrieval::get_latest_for_entry::GetLatestEntry {};
+            let entries = $crate::retrieval::retrieval::fetch_entries::<$crud_type>(&get_latest, [< get_ $i _path >](), fetch_options, get_options)?;
             Ok(entries)
           }
 
@@ -124,7 +156,7 @@ macro_rules! crud {
           /// Notice that it pluralizes the value of `$i`, the second argument to the crud! macro call.
           #[doc="This just calls [inner_fetch_" $i "s]."]
           #[hdk_extern]
-          pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::FetchOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
+          pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::retrieval::FetchOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
             [<inner_fetch_ $i s>](fetch_options, GetOptions::latest())
           }
 
