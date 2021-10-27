@@ -1,8 +1,8 @@
 use hdk::prelude::*;
 
 use super::fetchers::Fetchers;
-use super::utils::is_valid_date_range;
 use super::inputs::FetchEntriesTime;
+use super::utils::is_valid_date_range;
 use crate::wire_element::WireElement;
 
 pub fn fetch_entries_in_time_range<

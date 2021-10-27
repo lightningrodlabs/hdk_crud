@@ -1,6 +1,6 @@
 use super::fetchers::Fetchers;
-use super::utils::next_day;
 use super::inputs::FetchEntriesTime;
+use super::utils::next_day;
 use crate::wire_element::WireElement;
 use chrono::{Datelike, Duration, Timelike};
 use hdk::prelude::*;

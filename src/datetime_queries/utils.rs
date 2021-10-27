@@ -1,6 +1,6 @@
+use super::inputs::FetchEntriesTime;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
 use hdk::prelude::*;
-use super::inputs::FetchEntriesTime;
 
 pub fn is_valid_date_range(
     start: FetchEntriesTime,

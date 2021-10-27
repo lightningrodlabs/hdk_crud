@@ -9,9 +9,9 @@ use ::mockall::automock;
 use mockall_double::double;
 
 #[cfg_attr(feature = "mock", double)]
-use crate::retrieval::get_latest_for_entry::GetLatestEntry;
-#[cfg_attr(feature = "mock", double)]
 use crate::datetime_queries::fetch_by_hour::FetchByHour;
+#[cfg_attr(feature = "mock", double)]
+use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 
 #[derive(Clone)]
 pub struct FetchByDay {}
