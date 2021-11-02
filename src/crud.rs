@@ -2,7 +2,7 @@ use std::convert::{TryFrom, TryInto};
 
 use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
 use hdk::link::create_link;
-use hdk::prelude::{AppEntryBytes, ChainTopOrdering, CreateInput, Entry, EntryDefId, ExternIO, ExternResult, Path, SerializedBytes, SerializedBytesError, WasmError, create, hash_entry, remote_signal};
+use hdk::prelude::{AppEntryBytes, ChainTopOrdering, CreateInput, Entry, EntryDefId, ExternIO, ExternResult, GetOptions, Path, SerializedBytes, SerializedBytesError, WasmError, create, hash_entry, remote_signal};
 /// A macro to go quick and easy
 /// from having just a Holochain entry definition
 /// to having a full create-read-update-delete set of
@@ -154,6 +154,25 @@ where
     }
     Ok(wire_entry)
 }
+pub fn fetch_action<T, E>(
+    fetch_options: crate::retrieval::retrieval::FetchOptions,
+    get_options: GetOptions,
+    path: Path,
+) -> ExternResult<Vec<WireElement<T>>> 
+where
+    Entry: TryFrom<T, Error = E>,
+    WasmError: From<E>,
+    T: 'static + Clone + TryFrom<SerializedBytes, Error = SerializedBytesError>,
+{
+    let get_latest = crate::retrieval::get_latest_for_entry::GetLatestEntry {};
+    let entries = crate::retrieval::retrieval::fetch_entries::<T>(
+      &get_latest, 
+      path, 
+      fetch_options, 
+      get_options,
+    )?;
+    Ok(entries)
+}
 #[macro_export]
 macro_rules! crud {
     (
@@ -275,7 +294,11 @@ macro_rules! crud {
           #[doc="This just calls [inner_fetch_" $i "s]."]
           #[hdk_extern]
           pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::retrieval::FetchOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
-            [<inner_fetch_ $i s>](fetch_options, GetOptions::latest())
+            crate::crud::fetch_action(
+              fetch_options, 
+              GetOptions::latest(),
+              [< get_ $i _path >](),
+            )
           }
 
           /*
