@@ -3,40 +3,6 @@ use std::convert::{TryFrom, TryInto};
 use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
 use hdk::link::create_link;
 use hdk::prelude::{AppEntryBytes, ChainTopOrdering, CreateInput, Entry, EntryDefId, ExternIO, ExternResult, GetOptions, Path, SerializedBytes, SerializedBytesError, WasmError, create, delete_entry, hash_entry, remote_signal};
-/// A macro to go quick and easy
-/// from having just a Holochain entry definition
-/// to having a full create-read-update-delete set of
-/// functionality in your Zome, plus "signals" (events).
-/// See [example] for a comprehensive look at how this works.
-/// ```ignore
-/// use hdk::prelude::*;
-/// use hdk_crud::*;
-///
-/// #[hdk_entry(id = "test")]
-/// #[derive(Clone, PartialEq)]
-/// pub struct Test {
-///     pub number: i32,
-/// }
-/// // TestSignal pops out of the crud! macro
-/// #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
-/// #[serde(untagged)]
-/// pub enum TestSignalTypes {
-///     Test(TestSignal)
-/// }
-/// pub fn convert_to_receiver_signal(signal: TestSignal) -> TestSignalTypes {
-///     TestSignalTypes::Test(signal)
-/// }
-/// pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
-///     Ok(Vec::new())
-/// }
-/// crud!(
-///     Test,
-///     test,
-///     "test",
-///     get_peers,
-///     convert_to_receiver_signal,
-/// );
-/// ```
 use hdk::time::sys_time;
 use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 
@@ -49,6 +15,10 @@ pub fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
         DateTime::from_utc(NaiveDateTime::from_timestamp(time.0, time.1), Utc);
     Ok(date)
 }
+/// This will create an entry and link it off the main Path.
+/// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
+/// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+/// uses `ChainTopOrdering::Relaxed` such that multiple creates can be committed in parallel
 pub fn create_action<T, E, S>(
     entry: T,
     path: Path,
@@ -111,6 +81,10 @@ where
     Ok(wire_entry)
 }
 
+/// This will add an update to an entry.
+/// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
+/// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+/// uses `ChainTopOrdering::Relaxed` such that multiple updates can be committed in parallel
 pub fn update_action<T, E, S>(
     entry: T,
     header_hash: HeaderHashB64,
@@ -154,6 +128,7 @@ where
     }
     Ok(wire_entry)
 }
+/// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
 pub fn fetch_action<T, E>(
     fetch_options: crate::retrieval::retrieval::FetchOptions,
     get_options: GetOptions,
@@ -173,6 +148,10 @@ where
     )?;
     Ok(entries)
 }
+/// This will mark the entry at `address` as "deleted".
+/// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
+/// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+#[doc="This will be called with `send_signal` as `true` by [delete_[entry_type]]"]
 pub fn delete_action<T, E, S>(
     header_hash: HeaderHashB64,
     path_string: String,
@@ -201,6 +180,40 @@ where
     }
     Ok(header_hash)
 }
+/// A macro to go quick and easy
+/// from having just a Holochain entry definition
+/// to having a full create-read-update-delete set of
+/// functionality in your Zome, plus "signals" (events).
+/// See [example] for a comprehensive look at how this works.
+/// ```ignore
+/// use hdk::prelude::*;
+/// use hdk_crud::*;
+///
+/// #[hdk_entry(id = "test")]
+/// #[derive(Clone, PartialEq)]
+/// pub struct Test {
+///     pub number: i32,
+/// }
+/// // TestSignal pops out of the crud! macro
+/// #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
+/// #[serde(untagged)]
+/// pub enum TestSignalTypes {
+///     Test(TestSignal)
+/// }
+/// pub fn convert_to_receiver_signal(signal: TestSignal) -> TestSignalTypes {
+///     TestSignalTypes::Test(signal)
+/// }
+/// pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
+///     Ok(Vec::new())
+/// }
+/// crud!(
+///     Test,
+///     test,
+///     "test",
+///     get_peers,
+///     convert_to_receiver_signal,
+/// );
+/// ```
 #[macro_export]
 macro_rules! crud {
     (
@@ -291,7 +304,7 @@ macro_rules! crud {
           /// This will create an entry and link it off the main Path.
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          #[doc="This just calls [inner_create_" $i "] with `send_signal` as `true`."]
+          #[doc="This just calls [create_action] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
             crate::crud::create_action(
@@ -332,46 +345,13 @@ macro_rules! crud {
           /*
             UPDATE
           */
-          /// This will add an update to an entry.
-          /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
-          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          /// uses `ChainTopOrdering::Relaxed` such that multiple updates can be committed in parallel
-          pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            // calling update instead of update_entry to be able to indicate relaxed chain ordering
-            hdk::entry::update(
-              update.header_hash.clone().into(),
-              CreateInput::new(
-                EntryDefId::App($path.to_string()),
-                Entry::App(update.entry.clone().try_into()?),
-                ChainTopOrdering::Relaxed,
-              ),
-            )?;
-            let entry_address = hash_entry(&update.entry)?;
-            let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
-                entry: update.entry,
-                header_hash: update.header_hash,
-                entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_address)
-            };
-            if (send_signal) {
-              let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
-                entry_type: $path.to_string(),
-                action: $crate::signals::ActionType::Update,
-                data: $crate::signals::SignalData::Update(wire_entry.clone()),
-              };
-              let signal = $convert_to_receiver_signal(action_signal);
-              let payload = ExternIO::encode(signal)?;
-              let peers = $get_peers()?;
-              remote_signal(payload, peers)?;
-            }
-            Ok(wire_entry)
-          }
 
           #[cfg(not(feature = "exclude_zome_fns"))]
           /// This is the exposed/public Zome function for creating an entry of this type.
           /// This will add an update to an entry.
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          #[doc="This just calls [inner_update_" $i "] with `send_signal` as `true`."]
+          #[doc="This just calls [update_action] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
             crate::crud::update_action(
@@ -391,7 +371,7 @@ macro_rules! crud {
           #[doc="It will no longer be returned by [fetch_" $i "s]."]
           /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          #[doc="This will be called with `send_signal` as `true` by [archive_" $i "]"]
+          #[doc="This will be called with `send_signal` as `true` by [delete_" $i "]"]
           pub fn [<inner_archive_ $i>](address: ::holo_hash::HeaderHashB64, send_signal: bool) -> ExternResult<::holo_hash::HeaderHashB64> {
             delete_entry(address.clone().into())?;
             if (send_signal) {
