@@ -174,7 +174,6 @@ where
     Ok(entries)
 }
 pub fn delete_action<T, E, S>(
-    _entry: T,
     header_hash: HeaderHashB64,
     path_string: String,
     send_signal: bool,
@@ -418,8 +417,7 @@ macro_rules! crud {
           #[doc="This just calls [delete_action] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<delete_ $i>](address: ::holo_hash::HeaderHashB64) -> ExternResult<::holo_hash::HeaderHashB64> {
-            crate::crud::delete_action(
-              $crud_type, // doing this because if specify the generic in the function handle, it expects E and S as well
+            crate::crud::delete_action::<[<$crud_type>], _, _>(
               address,
               $path.to_string(),
               true,
