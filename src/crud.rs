@@ -2,7 +2,11 @@ use std::convert::{TryFrom, TryInto};
 
 use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
 use hdk::link::create_link;
-use hdk::prelude::{AppEntryBytes, ChainTopOrdering, CreateInput, Entry, EntryDefId, ExternIO, ExternResult, GetOptions, Path, SerializedBytes, SerializedBytesError, WasmError, create, delete_entry, hash_entry, remote_signal};
+use hdk::prelude::{
+    create, delete_entry, hash_entry, remote_signal, AppEntryBytes, ChainTopOrdering, CreateInput,
+    Entry, EntryDefId, ExternIO, ExternResult, GetOptions, Path, SerializedBytes,
+    SerializedBytesError, WasmError,
+};
 use hdk::time::sys_time;
 use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 
@@ -27,7 +31,7 @@ pub fn create_action<T, E, S>(
     add_time_path: Option<String>,
     convert_to_receiver_signal: fn(crate::signals::ActionSignal<T>) -> S,
     get_peers: fn() -> ExternResult<Vec<AgentPubKey>>,
-) -> ExternResult<WireElement<T>> 
+) -> ExternResult<WireElement<T>>
 where
     Entry: TryFrom<T, Error = E>,
     WasmError: From<E>,
@@ -36,47 +40,51 @@ where
     S: serde::Serialize + std::fmt::Debug,
 {
     // calling create instead of create_entry to be able to indicate relaxed chain ordering
-    let address = create(
-      CreateInput::new(
+    let address = create(CreateInput::new(
         EntryDefId::App(path_string.clone()),
         Entry::App(entry.clone().try_into()?),
         ChainTopOrdering::Relaxed,
-      )
-    )?;
-    let entry_hash = hash_entry(entry.clone())?; 
+    ))?;
+    let entry_hash = hash_entry(entry.clone())?;
     path.ensure()?;
     let path_hash = path.hash()?;
     create_link(path_hash, entry_hash.clone(), ())?;
 
     match add_time_path {
-      None => (),
-      Some(base_component) => {
-        // create a time_path
-        let date: ::chrono::DateTime<::chrono::Utc> = now_date_time()?;
+        None => (),
+        Some(base_component) => {
+            // create a time_path
+            let date: ::chrono::DateTime<::chrono::Utc> = now_date_time()?;
 
-        let time_path = crate::datetime_queries::utils::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
+            let time_path = crate::datetime_queries::utils::hour_path_from_date(
+                base_component,
+                date.year(),
+                date.month(),
+                date.day(),
+                date.hour(),
+            );
 
-        time_path.ensure()?;
-        create_link(time_path.hash()?,entry_hash.clone(), ())?;
-      }
+            time_path.ensure()?;
+            create_link(time_path.hash()?, entry_hash.clone(), ())?;
+        }
     }
 
     let wire_entry: WireElement<T> = WireElement {
-      entry,
-      header_hash: HeaderHashB64::new(address),
-      entry_hash: EntryHashB64::new(entry_hash)
+        entry,
+        header_hash: HeaderHashB64::new(address),
+        entry_hash: EntryHashB64::new(entry_hash),
     };
 
     if (send_signal) {
-      let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-        entry_type: path_string,
-        action: crate::signals::ActionType::Create,
-        data: crate::signals::SignalData::Create::<T>(wire_entry.clone()),
-      };
-      let signal = convert_to_receiver_signal(action_signal);
-      let payload = ExternIO::encode(signal)?;
-      let peers = get_peers()?;
-      remote_signal(payload, peers)?;
+        let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+            entry_type: path_string,
+            action: crate::signals::ActionType::Create,
+            data: crate::signals::SignalData::Create::<T>(wire_entry.clone()),
+        };
+        let signal = convert_to_receiver_signal(action_signal);
+        let payload = ExternIO::encode(signal)?;
+        let peers = get_peers()?;
+        remote_signal(payload, peers)?;
     }
     Ok(wire_entry)
 }
@@ -92,7 +100,7 @@ pub fn update_action<T, E, S>(
     send_signal: bool,
     convert_to_receiver_signal: fn(crate::signals::ActionSignal<T>) -> S,
     get_peers: fn() -> ExternResult<Vec<AgentPubKey>>,
-) -> ExternResult<WireElement<T>> 
+) -> ExternResult<WireElement<T>>
 where
     Entry: TryFrom<T, Error = E>,
     WasmError: From<E>,
@@ -102,29 +110,29 @@ where
 {
     // calling update instead of update_entry to be able to indicate relaxed chain ordering
     hdk::entry::update(
-      header_hash.clone().into(),
-      CreateInput::new(
-        EntryDefId::App(path_string.clone()),
-        Entry::App(entry.clone().try_into()?),
-        ChainTopOrdering::Relaxed,
-      ),
+        header_hash.clone().into(),
+        CreateInput::new(
+            EntryDefId::App(path_string.clone()),
+            Entry::App(entry.clone().try_into()?),
+            ChainTopOrdering::Relaxed,
+        ),
     )?;
     let entry_address = hash_entry(entry.clone())?;
     let wire_entry: WireElement<T> = WireElement {
         entry,
         header_hash,
-        entry_hash: EntryHashB64::new(entry_address)
+        entry_hash: EntryHashB64::new(entry_address),
     };
     if (send_signal) {
-      let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-        entry_type: path_string,
-        action: crate::signals::ActionType::Update,
-        data: crate::signals::SignalData::Update(wire_entry.clone()),
-      };
-      let signal = convert_to_receiver_signal(action_signal);
-      let payload = ExternIO::encode(signal)?;
-      let peers = get_peers()?;
-      remote_signal(payload, peers)?;
+        let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+            entry_type: path_string,
+            action: crate::signals::ActionType::Update,
+            data: crate::signals::SignalData::Update(wire_entry.clone()),
+        };
+        let signal = convert_to_receiver_signal(action_signal);
+        let payload = ExternIO::encode(signal)?;
+        let peers = get_peers()?;
+        remote_signal(payload, peers)?;
     }
     Ok(wire_entry)
 }
@@ -133,7 +141,7 @@ pub fn fetch_action<T, E>(
     fetch_options: crate::retrieval::retrieval::FetchOptions,
     get_options: GetOptions,
     path: Path,
-) -> ExternResult<Vec<WireElement<T>>> 
+) -> ExternResult<Vec<WireElement<T>>>
 where
     Entry: TryFrom<T, Error = E>,
     WasmError: From<E>,
@@ -141,24 +149,24 @@ where
 {
     let get_latest = crate::retrieval::get_latest_for_entry::GetLatestEntry {};
     let entries = crate::retrieval::retrieval::fetch_entries::<T>(
-      &get_latest, 
-      path, 
-      fetch_options, 
-      get_options,
+        &get_latest,
+        path,
+        fetch_options,
+        get_options,
     )?;
     Ok(entries)
 }
 /// This will mark the entry at `address` as "deleted".
 /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
 /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-#[doc="This will be called with `send_signal` as `true` by [delete_[entry_type]]"]
+#[doc = "This will be called with `send_signal` as `true` by [delete_[entry_type]]"]
 pub fn delete_action<T, E, S>(
     header_hash: HeaderHashB64,
     path_string: String,
     send_signal: bool,
     convert_to_receiver_signal: fn(crate::signals::ActionSignal<T>) -> S,
     get_peers: fn() -> ExternResult<Vec<AgentPubKey>>,
-) -> ExternResult<HeaderHashB64> 
+) -> ExternResult<HeaderHashB64>
 where
     Entry: TryFrom<T, Error = E>,
     WasmError: From<E>,
@@ -168,15 +176,15 @@ where
 {
     delete_entry(header_hash.clone().into())?;
     if (send_signal) {
-      let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-        entry_type: path_string,
-        action: crate::signals::ActionType::Delete,
-        data: crate::signals::SignalData::Delete::<T>(header_hash.clone()),
-      };
-      let signal = convert_to_receiver_signal(action_signal);
-      let payload = ExternIO::encode(signal)?;
-      let peers = get_peers()?;
-      remote_signal(payload, peers)?;
+        let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+            entry_type: path_string,
+            action: crate::signals::ActionType::Delete,
+            data: crate::signals::SignalData::Delete::<T>(header_hash.clone()),
+        };
+        let signal = convert_to_receiver_signal(action_signal);
+        let payload = ExternIO::encode(signal)?;
+        let peers = get_peers()?;
+        remote_signal(payload, peers)?;
     }
     Ok(header_hash)
 }
@@ -220,7 +228,7 @@ macro_rules! crud {
       $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $convert_to_receiver_signal:ident
     ) => {
         ::paste::paste! {
-          use ::chrono::{Datelike, Timelike};
+
           /// This is the &str that can be passed into Path to
           /// find all the entries created using these create functions
           /// which are linked off of this Path.
@@ -278,7 +286,7 @@ macro_rules! crud {
           #[hdk_extern]
           pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::retrieval::FetchOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
             crate::crud::fetch_action(
-              fetch_options, 
+              fetch_options,
               GetOptions::latest(),
               [< get_ $i _path >](),
             )
@@ -387,7 +395,7 @@ pub mod example {
     pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
         Ok(Vec::new())
     }
-    
+
     crud!(
         Example,
         example,
