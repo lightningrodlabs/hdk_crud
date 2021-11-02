@@ -2,7 +2,7 @@ use std::convert::{TryFrom, TryInto};
 
 use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
 use hdk::link::create_link;
-use hdk::prelude::{AppEntryBytes, ChainTopOrdering, CreateInput, Entry, EntryDefId, ExternIO, ExternResult, GetOptions, Path, SerializedBytes, SerializedBytesError, WasmError, create, hash_entry, remote_signal};
+use hdk::prelude::{AppEntryBytes, ChainTopOrdering, CreateInput, Entry, EntryDefId, ExternIO, ExternResult, GetOptions, Path, SerializedBytes, SerializedBytesError, WasmError, create, delete_entry, hash_entry, remote_signal};
 /// A macro to go quick and easy
 /// from having just a Holochain entry definition
 /// to having a full create-read-update-delete set of
@@ -172,6 +172,35 @@ where
       get_options,
     )?;
     Ok(entries)
+}
+pub fn delete_action<T, E, S>(
+    _entry: T,
+    header_hash: HeaderHashB64,
+    path_string: String,
+    send_signal: bool,
+    convert_to_receiver_signal: fn(crate::signals::ActionSignal<T>) -> S,
+    get_peers: fn() -> ExternResult<Vec<AgentPubKey>>,
+) -> ExternResult<HeaderHashB64> 
+where
+    Entry: TryFrom<T, Error = E>,
+    WasmError: From<E>,
+    T: Clone,
+    AppEntryBytes: TryFrom<T, Error = E>,
+    S: serde::Serialize + std::fmt::Debug,
+{
+    delete_entry(header_hash.clone().into())?;
+    if (send_signal) {
+      let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+        entry_type: path_string,
+        action: crate::signals::ActionType::Delete,
+        data: crate::signals::SignalData::Delete::<T>(header_hash.clone()),
+      };
+      let signal = convert_to_receiver_signal(action_signal);
+      let payload = ExternIO::encode(signal)?;
+      let peers = get_peers()?;
+      remote_signal(payload, peers)?;
+    }
+    Ok(header_hash)
 }
 #[macro_export]
 macro_rules! crud {
@@ -389,7 +418,14 @@ macro_rules! crud {
           #[doc="This just calls [inner_archive_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<archive_ $i>](address: ::holo_hash::HeaderHashB64) -> ExternResult<::holo_hash::HeaderHashB64> {
-            [<inner_archive_ $i>](address, true)
+            crate::crud::delete_action(
+              $crud_type, // doing this because if specify the generic in the function handle, it expects E and S as well
+              address,
+              $path.to_string(),
+              true,
+              $convert_to_receiver_signal,
+              $get_peers,
+            )
           }
         }
     };
