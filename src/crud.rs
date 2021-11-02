@@ -415,9 +415,9 @@ macro_rules! crud {
           #[doc="It will no longer be returned by [fetch_" $i "s]."]
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          #[doc="This just calls [inner_archive_" $i "] with `send_signal` as `true`."]
+          #[doc="This just calls [delete_action] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<archive_ $i>](address: ::holo_hash::HeaderHashB64) -> ExternResult<::holo_hash::HeaderHashB64> {
+          pub fn [<delete_ $i>](address: ::holo_hash::HeaderHashB64) -> ExternResult<::holo_hash::HeaderHashB64> {
             crate::crud::delete_action(
               $crud_type, // doing this because if specify the generic in the function handle, it expects E and S as well
               address,
