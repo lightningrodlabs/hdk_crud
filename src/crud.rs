@@ -1,5 +1,8 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
-use hdk::prelude::ExternResult;
+use std::convert::{TryFrom, TryInto};
+
+use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
+use hdk::link::create_link;
+use hdk::prelude::{AppEntryBytes, ChainTopOrdering, CreateInput, Entry, EntryDefId, ExternIO, ExternResult, Path, SerializedBytes, SerializedBytesError, WasmError, create, hash_entry, remote_signal};
 /// A macro to go quick and easy
 /// from having just a Holochain entry definition
 /// to having a full create-read-update-delete set of
@@ -35,6 +38,9 @@ use hdk::prelude::ExternResult;
 /// );
 /// ```
 use hdk::time::sys_time;
+use holo_hash::AgentPubKey;
+
+use crate::wire_element::WireElement;
 
 pub fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
     let time = sys_time()?.as_seconds_and_nanos();
@@ -42,6 +48,67 @@ pub fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
     let date: DateTime<Utc> =
         DateTime::from_utc(NaiveDateTime::from_timestamp(time.0, time.1), Utc);
     Ok(date)
+}
+pub fn create_action<T, E, S>(
+    entry: T,
+    path: Path,
+    path_string: String,
+    send_signal: bool,
+    add_time_path: Option<String>,
+    convert_to_receiver_signal: fn(crate::signals::ActionSignal<T>) -> S, // not sure how to deal with this return type properly
+    get_peers: fn() -> ExternResult<Vec<AgentPubKey>>,
+) -> ExternResult<WireElement<T>> 
+where
+    Entry: TryFrom<T, Error = E>,
+    WasmError: From<E>,
+    T: Clone,
+    AppEntryBytes: TryFrom<T, Error = E>,
+    S: serde::Serialize + std::fmt::Debug,
+{
+    // calling create instead of create_entry to be able to indicate relaxed chain ordering
+    let address = create(
+      CreateInput::new(
+        EntryDefId::App(path_string.clone()),
+        Entry::App(entry.clone().try_into()?),
+        ChainTopOrdering::Relaxed,
+      )
+    )?;
+    let entry_hash = hash_entry(entry.clone())?; 
+    path.ensure()?;
+    let path_hash = path.hash()?;
+    create_link(path_hash, entry_hash.clone(), ())?;
+
+    match add_time_path {
+      None => (),
+      Some(base_component) => {
+        // create a time_path
+        let date: ::chrono::DateTime<::chrono::Utc> = now_date_time()?;
+
+        let time_path = crate::datetime_queries::utils::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
+
+        time_path.ensure()?;
+        create_link(time_path.hash()?,entry_hash.clone(), ())?;
+      }
+    }
+
+    let wire_entry: WireElement<T> = WireElement {
+      entry,
+      header_hash: ::holo_hash::HeaderHashB64::new(address),
+      entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
+    };
+
+    if (send_signal) {
+      let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+        entry_type: path_string,
+        action: crate::signals::ActionType::Create,
+        data: crate::signals::SignalData::Create::<T>(wire_entry.clone()),
+      };
+      let signal = convert_to_receiver_signal(action_signal);
+      let payload = ExternIO::encode(signal)?;
+      let peers = get_peers()?;
+      remote_signal(payload, peers)?;
+    }
+    Ok(wire_entry)
 }
 
 #[macro_export]
@@ -137,7 +204,15 @@ macro_rules! crud {
           #[doc="This just calls [inner_create_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            [<inner_create_ $i>](entry, true, None)
+            crate::crud::create_action(
+              entry,
+              [< get_ $i _path >](),
+              $path.to_string(),
+              true,
+              None,
+              $convert_to_receiver_signal,
+              $get_peers,
+            )
           }
 
           /*
