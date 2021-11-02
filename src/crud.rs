@@ -38,7 +38,7 @@ use hdk::prelude::{AppEntryBytes, ChainTopOrdering, CreateInput, Entry, EntryDef
 /// );
 /// ```
 use hdk::time::sys_time;
-use holo_hash::AgentPubKey;
+use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 
 use crate::wire_element::WireElement;
 
@@ -55,7 +55,7 @@ pub fn create_action<T, E, S>(
     path_string: String,
     send_signal: bool,
     add_time_path: Option<String>,
-    convert_to_receiver_signal: fn(crate::signals::ActionSignal<T>) -> S, // not sure how to deal with this return type properly
+    convert_to_receiver_signal: fn(crate::signals::ActionSignal<T>) -> S,
     get_peers: fn() -> ExternResult<Vec<AgentPubKey>>,
 ) -> ExternResult<WireElement<T>> 
 where
@@ -93,8 +93,8 @@ where
 
     let wire_entry: WireElement<T> = WireElement {
       entry,
-      header_hash: ::holo_hash::HeaderHashB64::new(address),
-      entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
+      header_hash: HeaderHashB64::new(address),
+      entry_hash: EntryHashB64::new(entry_hash)
     };
 
     if (send_signal) {
@@ -111,6 +111,49 @@ where
     Ok(wire_entry)
 }
 
+pub fn update_action<T, E, S>(
+    entry: T,
+    header_hash: HeaderHashB64,
+    path_string: String,
+    send_signal: bool,
+    convert_to_receiver_signal: fn(crate::signals::ActionSignal<T>) -> S,
+    get_peers: fn() -> ExternResult<Vec<AgentPubKey>>,
+) -> ExternResult<WireElement<T>> 
+where
+    Entry: TryFrom<T, Error = E>,
+    WasmError: From<E>,
+    T: Clone,
+    AppEntryBytes: TryFrom<T, Error = E>,
+    S: serde::Serialize + std::fmt::Debug,
+{
+    // calling update instead of update_entry to be able to indicate relaxed chain ordering
+    hdk::entry::update(
+      header_hash.clone().into(),
+      CreateInput::new(
+        EntryDefId::App(path_string.clone()),
+        Entry::App(entry.clone().try_into()?),
+        ChainTopOrdering::Relaxed,
+      ),
+    )?;
+    let entry_address = hash_entry(entry.clone())?;
+    let wire_entry: WireElement<T> = WireElement {
+        entry,
+        header_hash,
+        entry_hash: EntryHashB64::new(entry_address)
+    };
+    if (send_signal) {
+      let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+        entry_type: path_string,
+        action: crate::signals::ActionType::Update,
+        data: crate::signals::SignalData::Update(wire_entry.clone()),
+      };
+      let signal = convert_to_receiver_signal(action_signal);
+      let payload = ExternIO::encode(signal)?;
+      let peers = get_peers()?;
+      remote_signal(payload, peers)?;
+    }
+    Ok(wire_entry)
+}
 #[macro_export]
 macro_rules! crud {
     (
@@ -280,7 +323,14 @@ macro_rules! crud {
           #[doc="This just calls [inner_update_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            [<inner_update_ $i>](update, true)
+            crate::crud::update_action(
+              update.entry,
+              update.header_hash,
+              $path.to_string(),
+              true,
+              $convert_to_receiver_signal,
+              $get_peers,
+            )
           }
 
           /*
