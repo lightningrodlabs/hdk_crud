@@ -1,56 +1,52 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
-use hdk::prelude::ExternResult;
 /// A macro to go quick and easy
 /// from having just a Holochain entry definition
 /// to having a full create-read-update-delete set of
-/// functionality in your Zome, plus "signals" (events).
+/// functionality in your Zome, "signals" (events), as well as
+/// time based queries.
 /// See [example] for a comprehensive look at how this works.
 /// ```ignore
 /// use hdk::prelude::*;
 /// use hdk_crud::*;
-///
-/// #[hdk_entry(id = "test")]
+/// #[hdk_entry(id = "example")]
 /// #[derive(Clone, PartialEq)]
-/// pub struct Test {
+/// pub struct Example {
 ///     pub number: i32,
 /// }
 /// // TestSignal pops out of the crud! macro
 /// #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 /// #[serde(untagged)]
-/// pub enum TestSignalTypes {
-///     Test(TestSignal)
+/// pub enum SignalTypes {
+/// Example(ActionSignal<Example>),
 /// }
-/// pub fn convert_to_receiver_signal(signal: TestSignal) -> TestSignalTypes {
-///     TestSignalTypes::Test(signal)
+/// impl From<ActionSignal<Example>> for SignalTypes {
+///     fn from(value: ActionSignal<Example>) -> Self {
+///         SignalTypes::Example(value)
+///     }
 /// }
+///
+/// pub fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
+///     Ok(emit_signal(&signal)?)
+/// }
+///
 /// pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
 ///     Ok(Vec::new())
 /// }
+///
 /// crud!(
-///     Test,
-///     test,
-///     "test",
+///     Example,
+///     example,
+///     "example",
 ///     get_peers,
-///     convert_to_receiver_signal,
+///     SignalTypes
 /// );
 /// ```
-use hdk::time::sys_time;
-
-pub fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
-    let time = sys_time()?.as_seconds_and_nanos();
-
-    let date: DateTime<Utc> =
-        DateTime::from_utc(NaiveDateTime::from_timestamp(time.0, time.1), Utc);
-    Ok(date)
-}
-
 #[macro_export]
 macro_rules! crud {
     (
-      $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $convert_to_receiver_signal:ident
+      $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $signal_type:ident
     ) => {
         ::paste::paste! {
-          use ::chrono::{Datelike, Timelike};
+
           /// This is the &str that can be passed into Path to
           /// find all the entries created using these create functions
           /// which are linked off of this Path.
@@ -61,9 +57,6 @@ macro_rules! crud {
           pub fn [<get_ $i _path>]() -> Path {
             Path::from([<$i:upper _PATH>])
           }
-
-
-
 
           #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
@@ -76,161 +69,71 @@ macro_rules! crud {
           /*
             CREATE
           */
-          /// This will create an entry and link it off the main Path.
-          /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
-          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          /// uses `ChainTopOrdering::Relaxed` such that multiple creates can be committed in parallel
-          #[doc="This will be called with `send_signal` as `true` by [create_" $i "]"]
-          pub fn [<inner_create_ $i>](entry: $crud_type, send_signal: bool, add_time_path: Option<String>) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            // calling create instead of create_entry to be able to indicate relaxed chain ordering
-            let address = create(
-              CreateInput::new(
-                EntryDefId::App($path.to_string()),
-                Entry::App(entry.clone().try_into()?),
-                ChainTopOrdering::Relaxed,
-              )
-            )?;
-            let entry_hash = hash_entry(&entry)?;
-            let path = [< get_ $i _path >]();
-            path.ensure()?;
-            let path_hash = path.hash()?;
-            create_link(path_hash, entry_hash.clone(), ())?;
-
-            match add_time_path {
-              None => (),
-              Some(base_component) => {
-                // create a time_path
-                let date: ::chrono::DateTime<::chrono::Utc> = $crate::crud::now_date_time()?;
-
-                let time_path = $crate::datetime_queries::utils::hour_path_from_date(base_component, date.year(), date.month(), date.day(), date.hour());
-
-                time_path.ensure()?;
-                create_link(time_path.hash()?,entry_hash.clone(), ())?;
-              }
-            }
-
-            let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
-              entry,
-              header_hash: ::holo_hash::HeaderHashB64::new(address),
-              entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_hash)
-            };
-
-            if (send_signal) {
-              let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
-                entry_type: $path.to_string(),
-                action: $crate::signals::ActionType::Create,
-                data: $crate::signals::SignalData::Create::<[<$crud_type>]>(wire_entry.clone()),
-              };
-              let signal = $convert_to_receiver_signal(action_signal);
-              let payload = ExternIO::encode(signal)?;
-              let peers = $get_peers()?;
-              remote_signal(payload, peers)?;
-            }
-            Ok(wire_entry)
-          }
 
           #[cfg(not(feature = "exclude_zome_fns"))]
           /// This is the exposed/public Zome function for creating an entry of this type.
           /// This will create an entry and link it off the main Path.
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          #[doc="This just calls [inner_create_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            [<inner_create_ $i>](entry, true, None)
+            let create_action = $crate::chain_actions::create_action::CreateAction {};
+            create_action.create_action::<$crud_type, ::hdk::prelude::WasmError, $signal_type> (
+              entry,
+              [< get_ $i _path >](),
+              $path.to_string(),
+              true,
+              None,
+              $get_peers()?,
+            )
           }
 
           /*
             READ
           */
-          /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
-          pub fn [<inner_fetch_ $i s>](fetch_options: $crate::retrieval::retrieval::FetchOptions, get_options: GetOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
-            let get_latest = $crate::retrieval::get_latest_for_entry::GetLatestEntry {};
-            let entries = $crate::retrieval::retrieval::fetch_entries::<$crud_type>(&get_latest, [< get_ $i _path >](), fetch_options, get_options)?;
-            Ok(entries)
-          }
 
           #[cfg(not(feature = "exclude_zome_fns"))]
           /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
           /// No signals will be sent as a result of calling this.
           /// Notice that it pluralizes the value of `$i`, the second argument to the crud! macro call.
-          #[doc="This just calls [inner_fetch_" $i "s]."]
           #[hdk_extern]
-          pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::retrieval::FetchOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
-            [<inner_fetch_ $i s>](fetch_options, GetOptions::latest())
+          pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::inputs::FetchOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
+            let fetch_action = $crate::chain_actions::fetch_action::FetchAction {};
+            let fetch_entries = $crate::retrieval::fetch_entries::FetchEntries {};
+            let fetch_links = $crate::retrieval::fetch_links::FetchLinks {};
+            fetch_action.fetch_action::<$crud_type, ::hdk::prelude::WasmError>(
+                &fetch_entries,
+                &fetch_links,
+              fetch_options,
+              GetOptions::latest(),
+              [< get_ $i _path >](),
+            )
           }
 
           /*
             UPDATE
           */
-          /// This will add an update to an entry.
-          /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
-          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          /// uses `ChainTopOrdering::Relaxed` such that multiple updates can be committed in parallel
-          pub fn [<inner_update_ $i>](update: [<$crud_type UpdateInput>], send_signal: bool) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            // calling update instead of update_entry to be able to indicate relaxed chain ordering
-            hdk::entry::update(
-              update.header_hash.clone().into(),
-              CreateInput::new(
-                EntryDefId::App($path.to_string()),
-                Entry::App(update.entry.clone().try_into()?),
-                ChainTopOrdering::Relaxed,
-              ),
-            )?;
-            let entry_address = hash_entry(&update.entry)?;
-            let wire_entry: $crate::wire_element::WireElement<[<$crud_type>]> = $crate::wire_element::WireElement {
-                entry: update.entry,
-                header_hash: update.header_hash,
-                entry_hash: ::hdk::prelude::holo_hash::EntryHashB64::new(entry_address)
-            };
-            if (send_signal) {
-              let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
-                entry_type: $path.to_string(),
-                action: $crate::signals::ActionType::Update,
-                data: $crate::signals::SignalData::Update(wire_entry.clone()),
-              };
-              let signal = $convert_to_receiver_signal(action_signal);
-              let payload = ExternIO::encode(signal)?;
-              let peers = $get_peers()?;
-              remote_signal(payload, peers)?;
-            }
-            Ok(wire_entry)
-          }
 
           #[cfg(not(feature = "exclude_zome_fns"))]
           /// This is the exposed/public Zome function for creating an entry of this type.
           /// This will add an update to an entry.
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          #[doc="This just calls [inner_update_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
           pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            [<inner_update_ $i>](update, true)
+            let update_action = $crate::chain_actions::update_action::UpdateAction {};
+            update_action.update_action::<$crud_type, ::hdk::prelude::WasmError, $signal_type>(
+              update.entry,
+              update.header_hash,
+              $path.to_string(),
+              true,
+              $get_peers()?,
+            )
           }
 
           /*
             DELETE
           */
-          /// This will mark the entry at `address` as "deleted".
-          #[doc="It will no longer be returned by [fetch_" $i "s]."]
-          /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
-          /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          #[doc="This will be called with `send_signal` as `true` by [archive_" $i "]"]
-          pub fn [<inner_archive_ $i>](address: ::holo_hash::HeaderHashB64, send_signal: bool) -> ExternResult<::holo_hash::HeaderHashB64> {
-            delete_entry(address.clone().into())?;
-            if (send_signal) {
-              let action_signal: $crate::signals::ActionSignal<[<$crud_type>]> = $crate::signals::ActionSignal {
-                entry_type: $path.to_string(),
-                action: $crate::signals::ActionType::Delete,
-                data: $crate::signals::SignalData::Delete::<[<$crud_type>]>(address.clone()),
-              };
-              let signal = $convert_to_receiver_signal(action_signal);
-              let payload = ExternIO::encode(signal)?;
-              let peers = $get_peers()?;
-              remote_signal(payload, peers)?;
-            }
-            Ok(address)
-          }
 
           #[cfg(not(feature = "exclude_zome_fns"))]
           /// This is the exposed/public Zome function for archiving an entry of this type.
@@ -238,10 +141,15 @@ macro_rules! crud {
           #[doc="It will no longer be returned by [fetch_" $i "s]."]
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
-          #[doc="This just calls [inner_archive_" $i "] with `send_signal` as `true`."]
           #[hdk_extern]
-          pub fn [<archive_ $i>](address: ::holo_hash::HeaderHashB64) -> ExternResult<::holo_hash::HeaderHashB64> {
-            [<inner_archive_ $i>](address, true)
+          pub fn [<delete_ $i>](address: ::holo_hash::HeaderHashB64) -> ExternResult<::holo_hash::HeaderHashB64> {
+            let delete_action = $crate::chain_actions::delete_action::DeleteAction {};
+            delete_action.delete_action::<$crud_type, ::hdk::prelude::WasmError, $signal_type>(
+              address,
+              $path.to_string(),
+              true,
+              $get_peers()?,
+            )
           }
         }
     };
@@ -252,10 +160,9 @@ macro_rules! crud {
 /// as what you'll get back out of it.
 /// Anything that says "NOT GENERATED" is not
 /// generated by the crud! macro call, and the rest is.
-/// It will generate 4 public Zome functions, as well as
-/// some inner functions called by those that you can refer to
-/// and call elsewhere. The 4 Zome functions in this example would be:
-/// [create_example](example::create_example), [fetch_examples](example::create_example), [update_example](example::create_example), and [archive_example](example::create_example).
+/// It will generate 4 public Zome functions
+/// The 4 Zome functions in this example would be:
+/// [create_example](example::create_example), [fetch_examples](example::fetch_examples), [update_example](example::update_example), and [delete_example](example::delete_example).
 pub mod example {
     use crate::signals::*;
     use hdk::prelude::*;
@@ -271,12 +178,17 @@ pub mod example {
 
     /// NOT GENERATED
     /// A high level signal type to unify all the entry type specific
-    /// signal types
+    /// signal types. Must implement the `From<ActionSignal<Example>>` trait
     #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
     // untagged because the useful tagging is done internally on the ActionSignal objects
     #[serde(untagged)]
     pub enum SignalTypes {
         Example(ActionSignal<Example>),
+    }
+    impl From<ActionSignal<Example>> for SignalTypes {
+        fn from(value: ActionSignal<Example>) -> Self {
+            SignalTypes::Example(value)
+        }
     }
 
     /// NOT GENERATED
@@ -288,29 +200,14 @@ pub mod example {
     }
 
     /// NOT GENERATED
-    /// This handles the conversion from its predefined type
-    /// to some slightly modified type that it should be sent over the
-    /// wire as. It is sort of like a pre-signal-fire hook
-    /// presenting the chance to do type conversion
-    pub fn convert_to_receiver_signal(signal: ActionSignal<Example>) -> SignalTypes {
-        SignalTypes::Example(signal)
-    }
-
-    /// NOT GENERATED
     /// This handles the fetching of a list of peers to which to send
     /// signals. In this example it's an empty list. Your function
     /// signature should match this function signature.
     pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
         Ok(Vec::new())
     }
-    
-    crud!(
-        Example,
-        example,
-        "example",
-        get_peers,
-        convert_to_receiver_signal
-    );
+
+    crud!(Example, example, "example", get_peers, SignalTypes);
 }
 
 #[cfg(test)]

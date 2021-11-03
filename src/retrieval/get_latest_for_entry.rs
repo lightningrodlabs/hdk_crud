@@ -1,6 +1,6 @@
 use hdk::prelude::*;
 
-use crate::retrieval::retrieval::*;
+use crate::retrieval::utils::*;
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
