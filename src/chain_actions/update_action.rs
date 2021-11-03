@@ -1,6 +1,6 @@
+use crate::wire_element::WireElement;
 use hdk::prelude::*;
 use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
-use crate::wire_element::WireElement;
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;

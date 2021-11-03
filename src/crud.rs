@@ -23,15 +23,15 @@
 ///         SignalTypes::Example(value)
 ///     }
 /// }
-/// 
+///
 /// pub fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
 ///     Ok(emit_signal(&signal)?)
 /// }
-/// 
+///
 /// pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
 ///     Ok(Vec::new())
 /// }
-/// 
+///
 /// crud!(
 ///     Example,
 ///     example,
@@ -207,13 +207,7 @@ pub mod example {
         Ok(Vec::new())
     }
 
-    crud!(
-        Example,
-        example,
-        "example",
-        get_peers,
-        SignalTypes
-    );
+    crud!(Example, example, "example", get_peers, SignalTypes);
 }
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
-use hdk::prelude::*;
-use std::convert::identity;
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 use crate::wire_element::WireElement;
+use hdk::prelude::*;
+use std::convert::identity;
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
@@ -14,7 +14,7 @@ impl FetchLinks {
     /// Useful for having a Path that you link everything to. This also internally calls [get_latest_for_entry] meaning
     /// that the contents for each entry returned are automatically the latest contents.
     pub fn fetch_links<
-        EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>
+        EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
     >(
         &self,
         get_latest: &GetLatestEntry,
@@ -25,12 +25,12 @@ impl FetchLinks {
             .into_inner()
             .into_iter()
             .map(|link: link::Link| {
-                get_latest.get_latest_for_entry::<EntryType>(link.target.clone(), get_options.clone())
+                get_latest
+                    .get_latest_for_entry::<EntryType>(link.target.clone(), get_options.clone())
             })
             .filter_map(Result::ok)
             .filter_map(identity)
             .map(|x| WireElement::from(x))
-            .collect()
-        )
+            .collect())
     }
 }

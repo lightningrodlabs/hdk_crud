@@ -1,11 +1,11 @@
-use hdk::prelude::*;
-use std::convert::identity;
-use crate::retrieval::get_latest_for_entry::GetLatestEntry;
-use crate::wire_element::WireElement;
-use crate::retrieval::inputs::FetchOptions; 
 use crate::retrieval::fetch_links::FetchLinks;
+use crate::retrieval::get_latest_for_entry::GetLatestEntry;
+use crate::retrieval::inputs::FetchOptions;
+use crate::wire_element::WireElement;
 #[cfg(feature = "mock")]
 use ::mockall::automock;
+use hdk::prelude::*;
+use std::convert::identity;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct FetchEntries {}
@@ -26,7 +26,8 @@ impl FetchEntries {
         match fetch_options {
             FetchOptions::All => {
                 let path_hash = entry_path.hash()?;
-                fetch_links.fetch_links::<EntryType>(get_latest, path_hash, get_options) // TODO: will have to instantiate or pass in the struct
+                fetch_links.fetch_links::<EntryType>(get_latest, path_hash, get_options)
+                // TODO: will have to instantiate or pass in the struct
             }
             FetchOptions::Specific(vec_entry_hash) => {
                 let entries = vec_entry_hash

@@ -1,5 +1,8 @@
+use crate::{
+    retrieval::{fetch_entries::FetchEntries, fetch_links::FetchLinks},
+    wire_element::WireElement,
+};
 use hdk::prelude::*;
-use crate::{retrieval::{fetch_entries::FetchEntries, fetch_links::FetchLinks}, wire_element::WireElement};
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;

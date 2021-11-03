@@ -1,12 +1,11 @@
-use hdk::prelude::*;
-use chrono::{DateTime, Datelike, Timelike, Utc};
-use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
-use crate::wire_element::WireElement;
 use crate::chain_actions::utils::now_date_time;
+use crate::wire_element::WireElement;
+use chrono::{DateTime, Datelike, Timelike, Utc};
+use hdk::prelude::*;
+use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
-
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct CreateAction {}
@@ -31,7 +30,7 @@ impl CreateAction {
         T: 'static + Clone,
         AppEntryBytes: TryFrom<T, Error = E>,
         S: 'static + From<crate::signals::ActionSignal<T>> + serde::Serialize + std::fmt::Debug,
-        E: 'static, 
+        E: 'static,
     {
         // calling create instead of create_entry to be able to indicate relaxed chain ordering
         let address = create(CreateInput::new(
