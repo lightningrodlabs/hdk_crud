@@ -7,9 +7,6 @@ use crate::chain_actions::utils::now_date_time;
 #[cfg(feature = "mock")]
 use ::mockall::automock;
 
-trait ConvertReceiverSignal<T, S> {
-    fn convert_to_receiver_signal(action_signal: crate::signals::ActionSignal<T>) -> S;
-}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct CreateAction {}

@@ -7,9 +7,9 @@
 /// ```ignore
 /// use hdk::prelude::*;
 /// use hdk_crud::*;
-/// #[hdk_entry(id = "test")]
+/// #[hdk_entry(id = "example")]
 /// #[derive(Clone, PartialEq)]
-/// pub struct Test {
+/// pub struct Example {
 ///     pub number: i32,
 /// }
 /// // TestSignal pops out of the crud! macro

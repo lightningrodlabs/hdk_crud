@@ -24,7 +24,7 @@ impl FetchAction {
         E: 'static,
     {
         let get_latest = crate::retrieval::get_latest_for_entry::GetLatestEntry {};
-        let entries = fetch_entries.fetch_entries::<T>( // TODO: change to struct method
+        let entries = fetch_entries.fetch_entries::<T>(
             fetch_links,
             &get_latest,
             path,
