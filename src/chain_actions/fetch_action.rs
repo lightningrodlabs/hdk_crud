@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use crate::wire_element::WireElement;
+use crate::{retrieval::{fetch_entries::FetchEntries, fetch_links::FetchLinks}, wire_element::WireElement};
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
@@ -10,7 +10,10 @@ pub struct FetchAction {}
 impl FetchAction {
     /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
     pub fn fetch_action<T, E>(
-        fetch_options: crate::retrieval::retrieval::FetchOptions,
+        &self,
+        fetch_entries: &FetchEntries,
+        fetch_links: &FetchLinks,
+        fetch_options: crate::retrieval::inputs::FetchOptions,
         get_options: GetOptions,
         path: Path,
     ) -> ExternResult<Vec<WireElement<T>>>
@@ -21,7 +24,8 @@ impl FetchAction {
         E: 'static,
     {
         let get_latest = crate::retrieval::get_latest_for_entry::GetLatestEntry {};
-        let entries = crate::retrieval::retrieval::fetch_entries::<T>( // TODO: change to struct method
+        let entries = fetch_entries.fetch_entries::<T>( // TODO: change to struct method
+            fetch_links,
             &get_latest,
             path,
             fetch_options,

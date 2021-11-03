@@ -17,29 +17,27 @@ impl DeleteAction {
         header_hash: HeaderHashB64,
         path_string: String,
         send_signal: bool,
-        // convert_to_receiver_signal: fn(crate::signals::ActionSignal<T>) -> S,
-        // get_peers: fn() -> ExternResult<Vec<AgentPubKey>>,
+        peers: Vec<AgentPubKey>,
     ) -> ExternResult<HeaderHashB64>
     where
         Entry: 'static + TryFrom<T, Error = E>,
         WasmError: 'static + From<E>,
         T: 'static + Clone,
         AppEntryBytes: 'static + TryFrom<T, Error = E>,
-        S: 'static + serde::Serialize + std::fmt::Debug,
+        S: 'static + From<crate::signals::ActionSignal<T>> + serde::Serialize + std::fmt::Debug,
         E: 'static,
     {
         delete_entry(header_hash.clone().into())?;
-        // if send_signal {
-        //     let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-        //         entry_type: path_string,
-        //         action: crate::signals::ActionType::Delete,
-        //         data: crate::signals::SignalData::Delete::<T>(header_hash.clone()),
-        //     };
-        //     let signal = convert_to_receiver_signal(action_signal);
-        //     let payload = ExternIO::encode(signal)?;
-        //     let peers = get_peers()?;
-        //     remote_signal(payload, peers)?;
-        // }
+        if send_signal {
+            let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+                entry_type: path_string,
+                action: crate::signals::ActionType::Delete,
+                data: crate::signals::SignalData::Delete::<T>(header_hash.clone()),
+            };
+            let signal = S::from(action_signal);
+            let payload = ExternIO::encode(signal)?;
+            remote_signal(payload, peers)?;
+        }
         Ok(header_hash)
     }
 }
