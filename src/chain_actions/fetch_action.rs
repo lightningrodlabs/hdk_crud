@@ -27,6 +27,7 @@ impl FetchAction {
         &self,
         fetch_entries: &FetchEntries,
         fetch_links: &FetchLinks,
+        get_latest: &GetLatestEntry,
         fetch_options: crate::retrieval::inputs::FetchOptions,
         get_options: GetOptions,
         path: Path,
@@ -37,7 +38,6 @@ impl FetchAction {
         T: 'static + Clone + TryFrom<SerializedBytes, Error = SerializedBytesError>,
         E: 'static,
     {
-        let get_latest = GetLatestEntry::new();
         let entries = fetch_entries.fetch_entries::<T>(
             fetch_links,
             &get_latest,
