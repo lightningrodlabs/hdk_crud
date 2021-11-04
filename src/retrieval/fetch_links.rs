@@ -1,9 +1,10 @@
-#[cfg_attr(feature = "mock", double)]
+#[cfg(not(feature = "mock"))]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
+#[cfg(feature = "mock")]
+use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
+
 use crate::wire_element::WireElement;
 use hdk::prelude::*;
-#[cfg(feature = "mock")]
-use mockall_double::double;
 use std::convert::identity;
 
 #[cfg(feature = "mock")]

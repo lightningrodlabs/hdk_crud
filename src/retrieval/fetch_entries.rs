@@ -1,9 +1,12 @@
-#[cfg_attr(feature = "mock", double)]
+#[cfg(not(feature = "mock"))]
 use crate::retrieval::fetch_links::FetchLinks;
-#[cfg_attr(feature = "mock", double)]
+#[cfg(not(feature = "mock"))]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
+
 #[cfg(feature = "mock")]
-use mockall_double::double;
+use crate::retrieval::fetch_links::MockFetchLinks as FetchLinks;
+#[cfg(feature = "mock")]
+use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
