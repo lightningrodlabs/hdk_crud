@@ -9,9 +9,6 @@ use ::mockall::automock;
 pub struct UpdateAction {}
 #[cfg_attr(feature = "mock", automock)]
 impl UpdateAction {
-    pub fn new() -> Self {
-        Self {}
-    }
     /// This will add an update to an entry.
     /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
     /// to all peers returned by the `get_peers` call given during the macro call to `crud!`

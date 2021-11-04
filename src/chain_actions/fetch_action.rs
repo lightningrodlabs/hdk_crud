@@ -22,9 +22,6 @@ use ::mockall::automock;
 pub struct FetchAction {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchAction {
-    pub fn new() -> Self {
-        Self {}
-    }
     /// This is the exposed/public Zome function for either fetching ALL or a SPECIFIC list of the entries of the type.
     pub fn fetch_action<T, E>(
         &self,

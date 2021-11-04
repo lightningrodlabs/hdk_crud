@@ -20,9 +20,6 @@ use std::convert::identity;
 pub struct FetchEntries {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchEntries {
-    pub fn new() -> Self {
-        Self {}
-    }
     // TODO: change this in such a way that the path is only passed in if it is needed (for fetching all), for example `All(String)` pass in the path as string
     /// Fetch either all entries of a certain type (assuming they are linked to a path) or a specific subset given their entry hashes.
     pub fn fetch_entries<

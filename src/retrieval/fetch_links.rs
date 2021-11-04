@@ -14,9 +14,6 @@ use ::mockall::automock;
 pub struct FetchLinks {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchLinks {
-    pub fn new() -> Self {
-        Self {}
-    }
     /// Fetch and deserialize all the entries of a certain type that are linked to an EntryHash.
     /// Useful for having a Path that you link everything to. This also internally calls [get_latest_for_entry] meaning
     /// that the contents for each entry returned are automatically the latest contents.

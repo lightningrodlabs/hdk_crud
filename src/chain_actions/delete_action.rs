@@ -8,9 +8,6 @@ use ::mockall::automock;
 pub struct DeleteAction {}
 #[cfg_attr(feature = "mock", automock)]
 impl DeleteAction {
-    pub fn new() -> Self {
-        Self {}
-    }
     /// This will mark the entry at `address` as "deleted".
     /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
     /// to all peers returned by the `get_peers` call given during the macro call to `crud!`

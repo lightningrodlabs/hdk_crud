@@ -13,9 +13,6 @@ use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 pub struct FetchByHour {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByHour {
-    pub fn new() -> Self {
-        Self {}
-    }
     pub fn fetch_entries_by_hour<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
     >(

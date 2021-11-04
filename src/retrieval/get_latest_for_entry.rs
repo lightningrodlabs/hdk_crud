@@ -17,9 +17,6 @@ pub type OptionEntryAndHash<T> = Option<EntryAndHash<T>>;
 pub struct GetLatestEntry {}
 #[cfg_attr(feature = "mock", automock)]
 impl GetLatestEntry {
-    pub fn new() -> Self {
-      Self {}
-    }
     /// If an entry at the `entry_hash` has multiple updates to itself, this
     /// function will sort through them by timestamp in order to return the contents
     /// of the latest update. It also has the special behaviour of returning the
