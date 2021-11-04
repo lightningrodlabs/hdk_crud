@@ -10,6 +10,9 @@ use ::mockall::automock;
 pub struct FetchByDayHour {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByDayHour {
+    pub fn new() -> Self {
+        Self {}
+    }
     pub fn fetch_entries_from_day_to_hour<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
     >(

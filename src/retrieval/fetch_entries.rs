@@ -1,9 +1,15 @@
+#[cfg_attr(feature = "mock", double)]
 use crate::retrieval::fetch_links::FetchLinks;
+#[cfg_attr(feature = "mock", double)]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
-use crate::retrieval::inputs::FetchOptions;
-use crate::wire_element::WireElement;
+#[cfg(feature = "mock")]
+use mockall_double::double;
+
 #[cfg(feature = "mock")]
 use ::mockall::automock;
+
+use crate::retrieval::inputs::FetchOptions;
+use crate::wire_element::WireElement;
 use hdk::prelude::*;
 use std::convert::identity;
 
@@ -11,6 +17,9 @@ use std::convert::identity;
 pub struct FetchEntries {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchEntries {
+    pub fn new() -> Self {
+        Self {}
+    }
     // TODO: change this in such a way that the path is only passed in if it is needed (for fetching all), for example `All(String)` pass in the path as string
     /// Fetch either all entries of a certain type (assuming they are linked to a path) or a specific subset given their entry hashes.
     pub fn fetch_entries<

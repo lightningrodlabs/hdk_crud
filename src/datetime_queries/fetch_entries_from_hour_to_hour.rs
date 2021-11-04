@@ -11,6 +11,9 @@ use ::mockall::automock;
 pub struct FetchByHourHour {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByHourHour {
+    pub fn new() -> Self {
+        Self {}
+    }
     pub fn fetch_entries_from_hour_to_hour<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
     >(

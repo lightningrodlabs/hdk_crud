@@ -11,6 +11,9 @@ use ::mockall::automock;
 pub struct FetchByDayDay {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByDayDay {
+    pub fn new() -> Self {
+        Self {}
+    }
     pub fn fetch_entries_from_day_to_day<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
     >(

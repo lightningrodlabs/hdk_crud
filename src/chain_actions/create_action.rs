@@ -11,6 +11,9 @@ use ::mockall::automock;
 pub struct CreateAction {}
 #[cfg_attr(feature = "mock", automock)]
 impl CreateAction {
+    pub fn new() -> Self {
+        Self {}
+    }
     /// This will create an entry and link it off the main Path.
     /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
     /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
