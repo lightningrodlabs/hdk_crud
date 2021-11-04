@@ -101,12 +101,14 @@ macro_rules! crud {
             let fetch_action = $crate::chain_actions::fetch_action::FetchAction {};
             let fetch_entries = $crate::retrieval::fetch_entries::FetchEntries {};
             let fetch_links = $crate::retrieval::fetch_links::FetchLinks {};
+            let get_latest = $crate::retrieval::get_latest_for_entry::GetLatestEntry {};
             fetch_action.fetch_action::<$crud_type, ::hdk::prelude::WasmError>(
                 &fetch_entries,
                 &fetch_links,
-              fetch_options,
-              GetOptions::latest(),
-              [< get_ $i _path >](),
+                &get_latest,
+                fetch_options,
+                GetOptions::latest(),
+                [< get_ $i _path >](),
             )
           }
 
