@@ -38,7 +38,6 @@ impl DeleteAction {
                 let signal = S::from(action_signal);
                 let payload = ExternIO::encode(signal)?;
                 remote_signal(payload, vec_peers)?;
-                ()
             },
         }
         Ok(header_hash)
