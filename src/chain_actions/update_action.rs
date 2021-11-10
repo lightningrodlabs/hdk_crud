@@ -18,8 +18,7 @@ impl UpdateAction {
         entry: T,
         header_hash: HeaderHashB64,
         entry_type_id: String,
-        send_signal: bool,
-        peers: Vec<AgentPubKey>,
+        send_signal_to_peers: Option<Vec<AgentPubKey>>,
     ) -> ExternResult<WireElement<T>>
     where
         Entry: TryFrom<T, Error = E>,
@@ -44,15 +43,19 @@ impl UpdateAction {
             header_hash,
             entry_hash: EntryHashB64::new(entry_address),
         };
-        if send_signal {
-            let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-                entry_type: entry_type_id,
-                action: crate::signals::ActionType::Update,
-                data: crate::signals::SignalData::Update(wire_entry.clone()),
-            };
-            let signal = S::from(action_signal);
-            let payload = ExternIO::encode(signal)?;
-            remote_signal(payload, peers)?;
+        match send_signal_to_peers {
+            None => (),
+            Some(vec_peers) => {
+                let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+                    entry_type: entry_type_id,
+                    action: crate::signals::ActionType::Update,
+                    data: crate::signals::SignalData::Update(wire_entry.clone()),
+                };
+                let signal = S::from(action_signal);
+                let payload = ExternIO::encode(signal)?;
+                remote_signal(payload, vec_peers)?;
+                ()
+            },
         }
         Ok(wire_entry)
     }

@@ -20,9 +20,8 @@ impl CreateAction {
         entry: T,
         path: Path,
         entry_type_id: String,
-        send_signal: bool,
+        send_signal_to_peers: Option<Vec<AgentPubKey>>,
         add_time_path: Option<String>,
-        peers: Vec<AgentPubKey>,
     ) -> ExternResult<WireElement<T>>
     where
         Entry: 'static + TryFrom<T, Error = E>,
@@ -68,15 +67,19 @@ impl CreateAction {
             entry_hash: EntryHashB64::new(entry_hash),
         };
 
-        if send_signal {
-            let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-                entry_type: entry_type_id,
-                action: crate::signals::ActionType::Create,
-                data: crate::signals::SignalData::Create::<T>(wire_entry.clone()),
-            };
-            let signal = S::from(action_signal);
-            let payload = ExternIO::encode(signal)?;
-            remote_signal(payload, peers)?;
+        match send_signal_to_peers {
+            None => (),
+            Some(vec_peers) => {
+                let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+                    entry_type: entry_type_id,
+                    action: crate::signals::ActionType::Create,
+                    data: crate::signals::SignalData::Create(wire_entry.clone()),
+                };
+                let signal = S::from(action_signal);
+                let payload = ExternIO::encode(signal)?;
+                remote_signal(payload, vec_peers)?;
+                ()
+            },
         }
         Ok(wire_entry)
     }
