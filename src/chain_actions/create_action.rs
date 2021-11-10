@@ -46,11 +46,10 @@ impl CreateAction {
         match link_off {
             None => (), //no link is made
             Some(path_or_entry_hash) => match path_or_entry_hash {
-                PathOrEntryHash::Path(path) => { // link of entry path
+                PathOrEntryHash::Path(path) => { // link off entry path
                     path.ensure()?;
                     let path_hash = path.hash()?;
                     create_link(path_hash, entry_hash.clone(), ())?;
-                    ()
                 },
                 PathOrEntryHash::EntryHash(base_entry_hash) => { // link off supplied entry hash
                     create_link(base_entry_hash, entry_hash.clone(), ())?;
@@ -93,7 +92,6 @@ impl CreateAction {
                 let signal = S::from(action_signal);
                 let payload = ExternIO::encode(signal)?;
                 remote_signal(payload, vec_peers)?;
-                ()
             }
         }
         Ok(wire_entry)
