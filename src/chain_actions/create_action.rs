@@ -7,6 +7,11 @@ use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 #[cfg(feature = "mock")]
 use ::mockall::automock;
 
+pub enum PathOrEntryHash {
+    Path(Path),
+    EntryHash(EntryHash),
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct CreateAction {}
 #[cfg_attr(feature = "mock", automock)]
@@ -18,11 +23,10 @@ impl CreateAction {
     pub fn create_action<T, E, S>(
         &self,
         entry: T,
-        path: Path,
-        path_string: String,
-        send_signal: bool,
+        link_off: Option<PathOrEntryHash>,
+        entry_type_id: String,
+        send_signal_to_peers: Option<Vec<AgentPubKey>>,
         add_time_path: Option<String>,
-        peers: Vec<AgentPubKey>,
     ) -> ExternResult<WireElement<T>>
     where
         Entry: 'static + TryFrom<T, Error = E>,
@@ -34,15 +38,24 @@ impl CreateAction {
     {
         // calling create instead of create_entry to be able to indicate relaxed chain ordering
         let address = create(CreateInput::new(
-            EntryDefId::App(path_string.clone()),
+            EntryDefId::App(entry_type_id.clone()),
             Entry::App(entry.clone().try_into()?),
             ChainTopOrdering::Relaxed,
         ))?;
         let entry_hash = hash_entry(entry.clone())?;
-        path.ensure()?;
-        let path_hash = path.hash()?;
-        create_link(path_hash, entry_hash.clone(), ())?;
-
+        match link_off {
+            None => (), //no link is made
+            Some(path_or_entry_hash) => match path_or_entry_hash {
+                PathOrEntryHash::Path(path) => { // link off entry path
+                    path.ensure()?;
+                    let path_hash = path.hash()?;
+                    create_link(path_hash, entry_hash.clone(), ())?;
+                },
+                PathOrEntryHash::EntryHash(base_entry_hash) => { // link off supplied entry hash
+                    create_link(base_entry_hash, entry_hash.clone(), ())?;
+                },
+            },
+        }
         match add_time_path {
             None => (),
             Some(base_component) => {
@@ -68,15 +81,18 @@ impl CreateAction {
             entry_hash: EntryHashB64::new(entry_hash),
         };
 
-        if send_signal {
-            let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-                entry_type: path_string,
-                action: crate::signals::ActionType::Create,
-                data: crate::signals::SignalData::Create::<T>(wire_entry.clone()),
-            };
-            let signal = S::from(action_signal);
-            let payload = ExternIO::encode(signal)?;
-            remote_signal(payload, peers)?;
+        match send_signal_to_peers {
+            None => (),
+            Some(vec_peers) => {
+                let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
+                    entry_type: entry_type_id,
+                    action: crate::signals::ActionType::Create,
+                    data: crate::signals::SignalData::Create(wire_entry.clone()),
+                };
+                let signal = S::from(action_signal);
+                let payload = ExternIO::encode(signal)?;
+                remote_signal(payload, vec_peers)?;
+            }
         }
         Ok(wire_entry)
     }
