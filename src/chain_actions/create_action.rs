@@ -7,6 +7,11 @@ use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 #[cfg(feature = "mock")]
 use ::mockall::automock;
 
+pub enum PathOrEntryHash {
+    Path(Path),
+    EntryHash(EntryHash),
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct CreateAction {}
 #[cfg_attr(feature = "mock", automock)]
@@ -18,7 +23,7 @@ impl CreateAction {
     pub fn create_action<T, E, S>(
         &self,
         entry: T,
-        path: Path,
+        link_off: Option<PathOrEntryHash>,
         entry_type_id: String,
         send_signal_to_peers: Option<Vec<AgentPubKey>>,
         add_time_path: Option<String>,
@@ -38,10 +43,20 @@ impl CreateAction {
             ChainTopOrdering::Relaxed,
         ))?;
         let entry_hash = hash_entry(entry.clone())?;
-        path.ensure()?;
-        let path_hash = path.hash()?;
-        create_link(path_hash, entry_hash.clone(), ())?;
-
+        match link_off {
+            None => (), //no link is made
+            Some(path_or_entry_hash) => match path_or_entry_hash {
+                PathOrEntryHash::Path(path) => { // link of entry path
+                    path.ensure()?;
+                    let path_hash = path.hash()?;
+                    create_link(path_hash, entry_hash.clone(), ())?;
+                    ()
+                },
+                PathOrEntryHash::EntryHash(base_entry_hash) => { // link off supplied entry hash
+                    create_link(base_entry_hash, entry_hash.clone(), ())?;
+                },
+            },
+        }
         match add_time_path {
             None => (),
             Some(base_component) => {
@@ -79,7 +94,7 @@ impl CreateAction {
                 let payload = ExternIO::encode(signal)?;
                 remote_signal(payload, vec_peers)?;
                 ()
-            },
+            }
         }
         Ok(wire_entry)
     }
