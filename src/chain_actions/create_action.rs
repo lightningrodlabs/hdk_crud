@@ -19,7 +19,7 @@ impl CreateAction {
         &self,
         entry: T,
         path: Path,
-        path_string: String,
+        entry_type_id: String,
         send_signal: bool,
         add_time_path: Option<String>,
         peers: Vec<AgentPubKey>,
@@ -34,7 +34,7 @@ impl CreateAction {
     {
         // calling create instead of create_entry to be able to indicate relaxed chain ordering
         let address = create(CreateInput::new(
-            EntryDefId::App(path_string.clone()),
+            EntryDefId::App(entry_type_id.clone()),
             Entry::App(entry.clone().try_into()?),
             ChainTopOrdering::Relaxed,
         ))?;
@@ -70,7 +70,7 @@ impl CreateAction {
 
         if send_signal {
             let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-                entry_type: path_string,
+                entry_type: entry_type_id,
                 action: crate::signals::ActionType::Create,
                 data: crate::signals::SignalData::Create::<T>(wire_entry.clone()),
             };

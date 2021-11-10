@@ -17,7 +17,7 @@ impl UpdateAction {
         &self,
         entry: T,
         header_hash: HeaderHashB64,
-        path_string: String,
+        entry_type_id: String,
         send_signal: bool,
         peers: Vec<AgentPubKey>,
     ) -> ExternResult<WireElement<T>>
@@ -33,7 +33,7 @@ impl UpdateAction {
         hdk::entry::update(
             header_hash.clone().into(),
             CreateInput::new(
-                EntryDefId::App(path_string.clone()),
+                EntryDefId::App(entry_type_id.clone()),
                 Entry::App(entry.clone().try_into()?),
                 ChainTopOrdering::Relaxed,
             ),
@@ -46,7 +46,7 @@ impl UpdateAction {
         };
         if send_signal {
             let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-                entry_type: path_string,
+                entry_type: entry_type_id,
                 action: crate::signals::ActionType::Update,
                 data: crate::signals::SignalData::Update(wire_entry.clone()),
             };

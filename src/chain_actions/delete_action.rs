@@ -15,7 +15,7 @@ impl DeleteAction {
     pub fn delete_action<T, E, S>(
         &self,
         header_hash: HeaderHashB64,
-        path_string: String,
+        entry_type_id: String,
         send_signal: bool,
         peers: Vec<AgentPubKey>,
     ) -> ExternResult<HeaderHashB64>
@@ -30,7 +30,7 @@ impl DeleteAction {
         delete_entry(header_hash.clone().into())?;
         if send_signal {
             let action_signal: crate::signals::ActionSignal<T> = crate::signals::ActionSignal {
-                entry_type: path_string,
+                entry_type: entry_type_id,
                 action: crate::signals::ActionType::Delete,
                 data: crate::signals::SignalData::Delete::<T>(header_hash.clone()),
             };
