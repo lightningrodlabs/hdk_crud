@@ -80,11 +80,10 @@ macro_rules! crud {
             let create_action = $crate::chain_actions::create_action::CreateAction {};
             create_action.create_action::<$crud_type, ::hdk::prelude::WasmError, $signal_type> (
               entry,
-              [< get_ $i _path >](),
+              Some($crate::chain_actions::create_action::PathOrEntryHash::Path([< get_ $i _path >]())),
               $path.to_string(),
-              true,
+              Some($get_peers()?),
               None,
-              $get_peers()?,
             )
           }
 
@@ -128,8 +127,7 @@ macro_rules! crud {
               update.entry,
               update.header_hash,
               $path.to_string(),
-              true,
-              $get_peers()?,
+              Some($get_peers()?),
             )
           }
 
@@ -149,8 +147,7 @@ macro_rules! crud {
             delete_action.delete_action::<$crud_type, ::hdk::prelude::WasmError, $signal_type>(
               address,
               $path.to_string(),
-              true,
-              $get_peers()?,
+              Some($get_peers()?),
             )
           }
         }
