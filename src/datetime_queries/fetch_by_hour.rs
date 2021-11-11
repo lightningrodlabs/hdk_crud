@@ -4,12 +4,12 @@ use hdk::prelude::*;
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
-#[cfg(feature = "mock")]
-use mockall_double::double;
 use std::convert::identity;
 
-#[cfg_attr(feature = "mock", double)]
+#[cfg(not(feature = "mock"))]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
+#[cfg(feature = "mock")]
+use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
 pub struct FetchByHour {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByHour {

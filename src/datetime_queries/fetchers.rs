@@ -1,17 +1,27 @@
-#[cfg(feature = "mock")]
-use mockall_double::double;
-
-#[cfg_attr(feature = "mock", double)]
+#[cfg(not(feature = "mock"))]
 use super::{
-    fetch_by_day::FetchByDay, fetch_by_hour::FetchByHour,
-    fetch_entries_from_day_to_day::FetchByDayDay, fetch_entries_from_day_to_hour::FetchByDayHour,
+    fetch_by_day::FetchByDay,
+    fetch_by_hour::FetchByHour,
+    fetch_entries_from_day_to_day::FetchByDayDay,
+    fetch_entries_from_day_to_hour::FetchByDayHour,
     fetch_entries_from_hour_to_day::FetchByHourDay,
     fetch_entries_from_hour_to_hour::FetchByHourHour,
 };
-
-#[cfg_attr(feature = "mock", double)]
+#[cfg(not(feature = "mock"))]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 
+#[cfg(feature = "mock")]
+use super::{
+    fetch_by_day::MockFetchByDay as FetchByDay,
+    fetch_by_hour::MockFetchByHour as FetchByHour,
+    fetch_entries_from_day_to_day::MockFetchByDayDay as FetchByDayDay,
+    fetch_entries_from_day_to_hour::MockFetchByDayHour as FetchByDayHour,
+    fetch_entries_from_hour_to_day::MockFetchByHourDay as FetchByHourDay,
+    fetch_entries_from_hour_to_hour::MockFetchByHourHour as FetchByHourHour,
+};
+
+#[cfg(feature = "mock")]
+use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
 pub struct Fetchers {
     pub day_to_day: FetchByDayDay,
     pub day_to_hour: FetchByDayHour,
@@ -39,6 +49,34 @@ impl Fetchers {
             day,
             hour,
             get_latest,
+        }
+    }
+}
+#[cfg(not(feature = "mock"))]
+impl Fetchers {
+    pub fn default() -> Self {
+        Self {
+            day_to_day: FetchByDayDay {},
+            day_to_hour: FetchByDayHour {},
+            hour_to_day: FetchByHourDay {},
+            hour_to_hour: FetchByHourHour {},
+            day: FetchByDay {},
+            hour: FetchByHour {},
+            get_latest: GetLatestEntry {},
+        }
+    }
+}
+#[cfg(feature = "mock")]
+impl Fetchers {
+    pub fn mock() -> Self {
+        Self {
+            day_to_day: FetchByDayDay::new(),
+            day_to_hour: FetchByDayHour::new(),
+            hour_to_day: FetchByHourDay::new(),
+            hour_to_hour: FetchByHourHour::new(),
+            day: FetchByDay::new(),
+            hour: FetchByHour::new(),
+            get_latest: GetLatestEntry::new(),
         }
     }
 }

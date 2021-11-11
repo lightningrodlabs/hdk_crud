@@ -125,7 +125,7 @@ mod tests {
             .times(1)
             .return_const(Ok(wire_vec.clone()));
 
-        let mock_fetchers = Fetchers::new(mock_day_to_day, mock_day_to_hour, mock_hour_to_day, mock_hour_to_hour, mock_by_day, mock_by_hour, mock_get_latest);
+        let mut mock_fetchers = Fetchers::mock();
 
         let result = super::fetch_entries_in_time_range::<Example>(
             &mock_fetchers,
