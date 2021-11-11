@@ -140,15 +140,7 @@ mod tests {
             )
             .times(4)
             .return_const(Ok(wire_vec.clone()));
-        let mock_fetchers = Fetchers {
-            day_to_day: mock_day_to_day,
-            day_to_hour: mock_day_to_hour,
-            hour_to_day: mock_hour_to_day,
-            hour_to_hour: mock_hour_to_hour,
-            day: mock_by_day,
-            hour: mock_by_hour,
-            get_latest: mock_get_latest,
-        };
+        let mock_fetchers = Fetchers::new(mock_day_to_day, mock_day_to_hour, mock_hour_to_day, mock_hour_to_hour, mock_by_day, mock_by_hour, mock_get_latest);
         let fetch_hour_hour = super::FetchByHourHour {};
         let result = fetch_hour_hour.fetch_entries_from_hour_to_hour::<Example>(
             &mock_fetchers,
@@ -207,15 +199,7 @@ mod tests {
             )
             .times(4)
             .return_const(Ok(wire_vec.clone()));
-        let mock_fetchers = Fetchers {
-            day_to_day: mock_day_to_day,
-            day_to_hour: mock_day_to_hour,
-            hour_to_day: mock_hour_to_day,
-            hour_to_hour: mock_hour_to_hour,
-            day: mock_by_day,
-            hour: mock_by_hour,
-            get_latest: mock_get_latest,
-        };
+        let mock_fetchers = Fetchers::new(mock_day_to_day, mock_day_to_hour, mock_hour_to_day, mock_hour_to_hour, mock_by_day, mock_by_hour, mock_get_latest);
         let fetch_hour_hour = super::FetchByHourHour {};
         let result = fetch_hour_hour.fetch_entries_from_hour_to_hour::<Example>(
             &mock_fetchers,
@@ -286,15 +270,7 @@ mod tests {
             )
             .times(3)
             .return_const(Ok(wire_vec.clone()));
-        let mock_fetchers = Fetchers {
-            day_to_day: mock_day_to_day,
-            day_to_hour: mock_day_to_hour,
-            hour_to_day: mock_hour_to_day,
-            hour_to_hour: mock_hour_to_hour,
-            day: mock_by_day,
-            hour: mock_by_hour,
-            get_latest: mock_get_latest,
-        };
+        let mock_fetchers = Fetchers::new(mock_day_to_day, mock_day_to_hour, mock_hour_to_day, mock_hour_to_hour, mock_by_day, mock_by_hour, mock_get_latest);
         let fetch_hour_hour = super::FetchByHourHour {};
         let result = fetch_hour_hour.fetch_entries_from_hour_to_hour::<Example>(
             &mock_fetchers,

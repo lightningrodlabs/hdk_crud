@@ -21,3 +21,24 @@ pub struct Fetchers {
     pub hour: FetchByHour,
     pub get_latest: GetLatestEntry,
 }
+impl Fetchers {
+    pub fn new(
+        day_to_day: FetchByDayDay,
+        day_to_hour: FetchByDayHour,
+        hour_to_day: FetchByHourDay,
+        hour_to_hour: FetchByHourHour,
+        day: FetchByDay,
+        hour: FetchByHour,
+        get_latest: GetLatestEntry,
+    ) -> Self {
+        Self {
+            day_to_day,
+            day_to_hour,
+            hour_to_day,
+            hour_to_hour,
+            day,
+            hour,
+            get_latest,
+        }
+    }
+}
