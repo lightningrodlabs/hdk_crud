@@ -65,7 +65,7 @@ impl Fetchers {
 }
 #[cfg(feature = "mock")]
 impl Fetchers {
-    pub fn mock() -> Self {
+    pub fn default() -> Self {
         Self {
             day_to_day: FetchByDayDay::new(),
             day_to_hour: FetchByDayHour::new(),

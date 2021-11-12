@@ -102,7 +102,7 @@ mod tests {
             entry: Example { number: 1 },
         };
         let wire_vec: Vec<WireElement<Example>> = vec![wire_element];
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         mock_fetchers
             .day_to_day
             .expect_fetch_entries_from_day_to_day::<Example>()
@@ -139,7 +139,7 @@ mod tests {
             day: 21 as u32,
             hour: Some(10 as u32),
         };
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         mock_fetchers
             .day_to_hour
             .expect_fetch_entries_from_day_to_hour::<Example>()
@@ -176,7 +176,7 @@ mod tests {
             day: 21 as u32,
             hour: None,
         };
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         mock_fetchers
             .hour_to_day
             .expect_fetch_entries_from_hour_to_day::<Example>()
@@ -213,7 +213,7 @@ mod tests {
             day: 21 as u32,
             hour: Some(10 as u32),
         };
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         mock_fetchers
             .hour_to_hour
             .expect_fetch_entries_from_hour_to_hour::<Example>()
