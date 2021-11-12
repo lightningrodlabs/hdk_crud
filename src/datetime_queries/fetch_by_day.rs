@@ -5,14 +5,16 @@ use hdk::prelude::*;
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
-#[cfg(feature = "mock")]
-use mockall_double::double;
 
-#[cfg_attr(feature = "mock", double)]
+#[cfg(not(feature = "mock"))]
 use crate::datetime_queries::fetch_by_hour::FetchByHour;
-#[cfg_attr(feature = "mock", double)]
+#[cfg(not(feature = "mock"))]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 
+#[cfg(feature = "mock")]
+use crate::datetime_queries::fetch_by_hour::MockFetchByHour as FetchByHour;
+#[cfg(feature = "mock")]
+use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
 #[derive(Clone)]
 pub struct FetchByDay {}
 #[cfg_attr(feature = "mock", automock)]

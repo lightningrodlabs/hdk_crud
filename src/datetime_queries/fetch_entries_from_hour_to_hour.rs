@@ -76,11 +76,7 @@ mod tests {
     use crate::crud::example::Example;
     use crate::datetime_queries::fetchers::Fetchers;
     use crate::datetime_queries::inputs::FetchEntriesTime;
-    use crate::datetime_queries::{
-        fetch_by_day, fetch_by_hour, fetch_entries_from_day_to_day, fetch_entries_from_day_to_hour,
-        fetch_entries_from_hour_to_day, fetch_entries_from_hour_to_hour,
-    };
-    use crate::retrieval::get_latest_for_entry;
+
     use crate::wire_element::WireElement;
     use ::fixt::prelude::*;
     use hdk::prelude::*;
@@ -93,13 +89,6 @@ mod tests {
         // ============================================
         // case 1: start and end on same day
         // ============================================
-        let mock_day_to_day = fetch_entries_from_day_to_day::MockFetchByDayDay::new();
-        let mock_day_to_hour = fetch_entries_from_day_to_hour::MockFetchByDayHour::new();
-        let mock_hour_to_day = fetch_entries_from_hour_to_day::MockFetchByHourDay::new();
-        let mock_hour_to_hour = fetch_entries_from_hour_to_hour::MockFetchByHourHour::new();
-        let mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
-        let mock_by_day = fetch_by_day::MockFetchByDay::new();
-
         // expect fetch by hour to be called 4 times
         let start_time = FetchEntriesTime {
             year: 2021,
@@ -127,8 +116,9 @@ mod tests {
             wire_element.clone(),
         ];
 
-        let mut mock_by_hour = fetch_by_hour::MockFetchByHour::new();
-        mock_by_hour
+        let mut mock_fetchers = Fetchers::mock();
+        mock_fetchers
+            .hour
             .expect_fetch_entries_by_hour::<Example>()
             .with(
                 mockall::predicate::always(),
@@ -140,15 +130,6 @@ mod tests {
             )
             .times(4)
             .return_const(Ok(wire_vec.clone()));
-        let mock_fetchers = Fetchers {
-            day_to_day: mock_day_to_day,
-            day_to_hour: mock_day_to_hour,
-            hour_to_day: mock_hour_to_day,
-            hour_to_hour: mock_hour_to_hour,
-            day: mock_by_day,
-            hour: mock_by_hour,
-            get_latest: mock_get_latest,
-        };
         let fetch_hour_hour = super::FetchByHourHour {};
         let result = fetch_hour_hour.fetch_entries_from_hour_to_hour::<Example>(
             &mock_fetchers,
@@ -160,13 +141,6 @@ mod tests {
         // ============================================
         // case 2: end on next day
         // ============================================
-        let mock_day_to_day = fetch_entries_from_day_to_day::MockFetchByDayDay::new();
-        let mock_day_to_hour = fetch_entries_from_day_to_hour::MockFetchByDayHour::new();
-        let mock_hour_to_day = fetch_entries_from_hour_to_day::MockFetchByHourDay::new();
-        let mock_hour_to_hour = fetch_entries_from_hour_to_hour::MockFetchByHourHour::new();
-        let mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
-        let mock_by_day = fetch_by_day::MockFetchByDay::new();
-
         // expect fetch by hour to be called 4 times, fetch by day to be called 0 times
         let start_time = FetchEntriesTime {
             year: 2021,
@@ -194,8 +168,9 @@ mod tests {
             wire_element.clone(),
         ];
 
-        let mut mock_by_hour = fetch_by_hour::MockFetchByHour::new();
-        mock_by_hour
+        let mut mock_fetchers = Fetchers::mock();
+        mock_fetchers
+            .hour
             .expect_fetch_entries_by_hour::<Example>()
             .with(
                 mockall::predicate::always(),
@@ -207,15 +182,6 @@ mod tests {
             )
             .times(4)
             .return_const(Ok(wire_vec.clone()));
-        let mock_fetchers = Fetchers {
-            day_to_day: mock_day_to_day,
-            day_to_hour: mock_day_to_hour,
-            hour_to_day: mock_hour_to_day,
-            hour_to_hour: mock_hour_to_hour,
-            day: mock_by_day,
-            hour: mock_by_hour,
-            get_latest: mock_get_latest,
-        };
         let fetch_hour_hour = super::FetchByHourHour {};
         let result = fetch_hour_hour.fetch_entries_from_hour_to_hour::<Example>(
             &mock_fetchers,
@@ -227,12 +193,6 @@ mod tests {
         // ============================================
         // case 3: multiple days between start and end
         // ============================================
-        let mock_day_to_day = fetch_entries_from_day_to_day::MockFetchByDayDay::new();
-        let mock_day_to_hour = fetch_entries_from_day_to_hour::MockFetchByDayHour::new();
-        let mock_hour_to_day = fetch_entries_from_hour_to_day::MockFetchByHourDay::new();
-        let mock_hour_to_hour = fetch_entries_from_hour_to_hour::MockFetchByHourHour::new();
-        let mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
-
         // expect fetch by hour to be called 3 times, fetch by day to be called 4 times
         let start_time = FetchEntriesTime {
             year: 2021,
@@ -259,10 +219,11 @@ mod tests {
             wire_element.clone(),
             wire_element.clone(),
         ];
-        let mut mock_by_day = fetch_by_day::MockFetchByDay::new();
 
+        let mut mock_fetchers = Fetchers::mock();
         // could instead put in the expected FetchEntriesTime struct
-        mock_by_day
+        mock_fetchers
+            .day
             .expect_fetch_entries_by_day::<Example>()
             .with(
                 mockall::predicate::always(),
@@ -273,8 +234,8 @@ mod tests {
             .times(1)
             .return_const(Ok(wire_vec.clone()));
 
-        let mut mock_by_hour = fetch_by_hour::MockFetchByHour::new();
-        mock_by_hour
+        mock_fetchers
+            .hour
             .expect_fetch_entries_by_hour::<Example>()
             .with(
                 mockall::predicate::always(),
@@ -286,15 +247,6 @@ mod tests {
             )
             .times(3)
             .return_const(Ok(wire_vec.clone()));
-        let mock_fetchers = Fetchers {
-            day_to_day: mock_day_to_day,
-            day_to_hour: mock_day_to_hour,
-            hour_to_day: mock_hour_to_day,
-            hour_to_hour: mock_hour_to_hour,
-            day: mock_by_day,
-            hour: mock_by_hour,
-            get_latest: mock_get_latest,
-        };
         let fetch_hour_hour = super::FetchByHourHour {};
         let result = fetch_hour_hour.fetch_entries_from_hour_to_hour::<Example>(
             &mock_fetchers,
