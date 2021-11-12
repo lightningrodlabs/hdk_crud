@@ -205,7 +205,7 @@ pub mod example {
     pub fn get_peers() -> ExternResult<Vec<AgentPubKey>> {
         Ok(Vec::new())
     }
-    
+
     #[cfg(not(feature = "mock"))]
     crud!(Example, example, "example", get_peers, SignalTypes);
 }

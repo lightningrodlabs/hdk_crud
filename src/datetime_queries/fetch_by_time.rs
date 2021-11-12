@@ -2,20 +2,19 @@ use crate::datetime_queries::inputs::FetchEntriesTime;
 use crate::wire_element::WireElement;
 use hdk::prelude::*;
 
-
+#[cfg(not(feature = "mock"))]
+use crate::datetime_queries::fetch_by_day::FetchByDay;
 #[cfg(not(feature = "mock"))]
 use crate::datetime_queries::fetch_by_hour::FetchByHour;
 #[cfg(not(feature = "mock"))]
 use crate::retrieval::get_latest_for_entry::GetLatestEntry;
-#[cfg(not(feature = "mock"))]
-use crate::datetime_queries::fetch_by_day::FetchByDay;
 
+#[cfg(feature = "mock")]
+use crate::datetime_queries::fetch_by_day::MockFetchByDay as FetchByDay;
 #[cfg(feature = "mock")]
 use crate::datetime_queries::fetch_by_hour::MockFetchByHour as FetchByHour;
 #[cfg(feature = "mock")]
 use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
-#[cfg(feature = "mock")]
-use crate::datetime_queries::fetch_by_day::MockFetchByDay as FetchByDay;
 pub fn fetch_entries_by_time<
     EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
 >(

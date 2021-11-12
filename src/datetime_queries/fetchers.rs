@@ -1,9 +1,7 @@
 #[cfg(not(feature = "mock"))]
 use super::{
-    fetch_by_day::FetchByDay,
-    fetch_by_hour::FetchByHour,
-    fetch_entries_from_day_to_day::FetchByDayDay,
-    fetch_entries_from_day_to_hour::FetchByDayHour,
+    fetch_by_day::FetchByDay, fetch_by_hour::FetchByHour,
+    fetch_entries_from_day_to_day::FetchByDayDay, fetch_entries_from_day_to_hour::FetchByDayHour,
     fetch_entries_from_hour_to_day::FetchByHourDay,
     fetch_entries_from_hour_to_hour::FetchByHourHour,
 };
@@ -12,8 +10,7 @@ use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 
 #[cfg(feature = "mock")]
 use super::{
-    fetch_by_day::MockFetchByDay as FetchByDay,
-    fetch_by_hour::MockFetchByHour as FetchByHour,
+    fetch_by_day::MockFetchByDay as FetchByDay, fetch_by_hour::MockFetchByHour as FetchByHour,
     fetch_entries_from_day_to_day::MockFetchByDayDay as FetchByDayDay,
     fetch_entries_from_day_to_hour::MockFetchByDayHour as FetchByDayHour,
     fetch_entries_from_hour_to_day::MockFetchByHourDay as FetchByHourDay,
