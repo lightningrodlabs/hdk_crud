@@ -90,7 +90,7 @@ mod tests {
             wire_element.clone(),
         ];
 
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         // could set up the expectation each time it is expected to be called to be able to check that the inputs are as expected
         mock_fetchers
             .day

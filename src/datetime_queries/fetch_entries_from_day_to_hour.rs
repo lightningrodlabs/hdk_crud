@@ -91,7 +91,7 @@ mod tests {
             wire_element.clone(),
         ];
 
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         // fetch_entries_by_day should be called for each day in the range
         mock_fetchers
             .day

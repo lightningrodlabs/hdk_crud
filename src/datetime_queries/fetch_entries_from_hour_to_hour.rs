@@ -116,7 +116,7 @@ mod tests {
             wire_element.clone(),
         ];
 
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         mock_fetchers
             .hour
             .expect_fetch_entries_by_hour::<Example>()
@@ -168,7 +168,7 @@ mod tests {
             wire_element.clone(),
         ];
 
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         mock_fetchers
             .hour
             .expect_fetch_entries_by_hour::<Example>()
@@ -220,7 +220,7 @@ mod tests {
             wire_element.clone(),
         ];
 
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         // could instead put in the expected FetchEntriesTime struct
         mock_fetchers
             .day

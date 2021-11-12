@@ -72,7 +72,7 @@ mod tests {
         let wire_vec: Vec<WireElement<Example>> = vec![wire_element.clone()];
         let wire_vec2 = vec![wire_element.clone(), wire_element.clone()];
 
-        let mut mock_fetchers = Fetchers::mock();
+        let mut mock_fetchers = Fetchers::default();
         // fetch_entries_by_day should be called for each day in the range
         mock_fetchers
             .day
