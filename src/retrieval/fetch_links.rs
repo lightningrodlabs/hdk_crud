@@ -15,7 +15,7 @@ pub struct FetchLinks {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchLinks {
     /// Fetch and deserialize all the entries of a certain type that are linked to an EntryHash.
-    /// Useful for having a Path that you link everything to. This also internally calls [get_latest_for_entry] meaning
+    /// Useful for having a Path that you link everything to. This also internally calls [get_latest_for_entry](super::get_latest_for_entry::GetLatestEntry::get_latest_for_entry) meaning
     /// that the contents for each entry returned are automatically the latest contents.
     pub fn fetch_links<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
