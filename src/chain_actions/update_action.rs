@@ -5,13 +5,14 @@ use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 #[cfg(feature = "mock")]
 use ::mockall::automock;
 
+/// a struct which implements a [update_action](UpdateAction::update_action) method
+/// a method is used instead of a function so that it can be mocked to simplify unit testing
 #[derive(Debug, PartialEq, Clone)]
 pub struct UpdateAction {}
 #[cfg_attr(feature = "mock", automock)]
 impl UpdateAction {
     /// This will add an update to an entry.
-    /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
-    /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+    /// It can also optionally send a signal of this event to all peers supplied in `send_signal_to_peers`
     /// uses `ChainTopOrdering::Relaxed` such that multiple updates can be committed in parallel
     pub fn update_action<T, E, S>(
         &self,

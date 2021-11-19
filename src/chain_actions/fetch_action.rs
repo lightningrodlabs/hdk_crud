@@ -18,6 +18,8 @@ use hdk::prelude::*;
 #[cfg(feature = "mock")]
 use ::mockall::automock;
 
+/// a struct which implements a [fetch_action](FetchAction::fetch_action) method
+/// a method is used instead of a function so that it can be mocked to simplify unit testing
 #[derive(Debug, PartialEq, Clone)]
 pub struct FetchAction {}
 #[cfg_attr(feature = "mock", automock)]

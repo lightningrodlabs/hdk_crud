@@ -2,7 +2,7 @@
 /// from having just a Holochain entry definition
 /// to having a full create-read-update-delete set of
 /// functionality in your Zome, "signals" (events), as well as
-/// time based queries.
+/// time based indexing and queries.
 /// See [example] for a comprehensive look at how this works.
 /// ```ignore
 /// use hdk::prelude::*;

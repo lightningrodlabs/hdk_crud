@@ -5,6 +5,7 @@ use super::inputs::FetchEntriesTime;
 use super::utils::is_valid_date_range;
 use crate::wire_element::WireElement;
 
+/// fetches all entries of a certain type between two dates. Calls different sub methods depending on if an hour is suppled.
 pub fn fetch_entries_in_time_range<
     EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
 >(

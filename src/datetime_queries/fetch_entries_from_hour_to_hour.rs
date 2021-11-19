@@ -11,6 +11,7 @@ use ::mockall::automock;
 pub struct FetchByHourHour {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByHourHour {
+    /// fetches all entries of a certain type between two dates (day and hour)
     pub fn fetch_entries_from_hour_to_hour<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
     >(

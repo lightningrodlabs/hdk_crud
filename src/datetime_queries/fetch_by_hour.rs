@@ -13,6 +13,7 @@ use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry
 pub struct FetchByHour {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByHour {
+    /// fetches all entries linked to a time path index for a particular hour on a specific day
     pub fn fetch_entries_by_hour<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
     >(

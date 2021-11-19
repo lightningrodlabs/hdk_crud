@@ -15,6 +15,8 @@ use crate::datetime_queries::fetch_by_day::MockFetchByDay as FetchByDay;
 use crate::datetime_queries::fetch_by_hour::MockFetchByHour as FetchByHour;
 #[cfg(feature = "mock")]
 use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
+
+/// fetches all entries linked to a time path index for either a specific day or hour of a day
 pub fn fetch_entries_by_time<
     EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
 >(
