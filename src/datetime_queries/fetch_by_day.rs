@@ -65,7 +65,6 @@ mod tests {
     use ::fixt::prelude::*;
     use hdk::hash_path::path::NAME;
     use hdk::prelude::*;
-    // use holochain_types::prelude::{ElementFixturator, EntryHashFixturator};
     use holochain_types::prelude::ElementFixturator;
 
     #[test]
