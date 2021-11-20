@@ -6,7 +6,8 @@ pub fn is_valid_date_range(
     start: FetchEntriesTime,
     end: FetchEntriesTime,
 ) -> Result<(), WasmError> {
-    match start.to_date_time() < end.to_date_time() { // Here is where we could allow for start and end to be equal
+    match start.to_date_time() < end.to_date_time() {
+        // Here is where we could allow for start and end to be equal
         true => Ok(()),
         false => Err(err("invalid date range")),
     }
