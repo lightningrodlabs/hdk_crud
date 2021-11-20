@@ -46,7 +46,7 @@ impl fmt::Display for ActionType {
 /// calling `remote_signal`
 pub fn create_receive_signal_cap_grant() -> ExternResult<()> {
     let mut functions: GrantedFunctions = BTreeSet::new();
-    functions.insert((zome_info()?.zome_name, "recv_remote_signal".into()));
+    functions.insert((zome_info()?.name, "recv_remote_signal".into()));
 
     create_cap_grant(CapGrantEntry {
         tag: "".into(),
@@ -105,7 +105,7 @@ mod tests {
             .return_const(Ok(zome_info.clone()));
         // create_cap_grant calls just `create` under the hood
         let mut functions: GrantedFunctions = BTreeSet::new();
-        functions.insert((zome_info.zome_name, "recv_remote_signal".into()));
+        functions.insert((zome_info.name, "recv_remote_signal".into()));
         let expected = CreateInput::new(
             EntryDefId::CapGrant,
             Entry::CapGrant(CapGrantEntry {

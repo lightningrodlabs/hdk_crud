@@ -29,7 +29,6 @@ impl FetchByHour {
         let links = get_links(path.hash()?, None)?;
 
         let entries: Vec<WireElement<EntryType>> = links
-            .into_inner()
             .into_iter()
             .map(|link| {
                 get_latest_entry
@@ -77,7 +76,7 @@ mod tests {
             create_link_hash: fixt![HeaderHash],
         };
 
-        let get_links_output = vec![Links::from(vec![link_output.clone()])];
+        let get_links_output = vec![vec![link_output.clone()]];
 
         mock_hdk
             .expect_get_links()

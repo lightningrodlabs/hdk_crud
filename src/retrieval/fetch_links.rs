@@ -26,7 +26,6 @@ impl FetchLinks {
         get_options: GetOptions,
     ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
         Ok(get_links(entry_hash, None)?
-            .into_inner()
             .into_iter()
             .map(|link: link::Link| {
                 get_latest
