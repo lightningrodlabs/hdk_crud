@@ -1,4 +1,6 @@
 use crate::wire_element::WireElement;
+use crate::chain_actions::utils::now_date_time;
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use hdk::prelude::*;
 use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 
@@ -19,6 +21,7 @@ impl UpdateAction {
         header_hash: HeaderHashB64,
         entry_type_id: String,
         send_signal_to_peers: Option<Vec<AgentPubKey>>,
+        add_time_path: Option<String>,
     ) -> ExternResult<WireElement<T>>
     where
         Entry: TryFrom<T, Error = E>,
@@ -38,6 +41,24 @@ impl UpdateAction {
             ),
         )?;
         let entry_address = hash_entry(entry.clone())?;
+        match add_time_path {
+            None => (),
+            Some(base_component) => {
+                // create a time_path
+                let date: DateTime<Utc> = now_date_time()?;
+
+                let time_path = crate::datetime_queries::utils::hour_path_from_date(
+                    base_component,
+                    date.year(),
+                    date.month(),
+                    date.day(),
+                    date.hour(),
+                );
+
+                time_path.ensure()?;
+                create_link(time_path.hash()?, entry_address.clone(), ())?;
+            }
+        }
         let wire_entry: WireElement<T> = WireElement {
             entry,
             header_hash,
