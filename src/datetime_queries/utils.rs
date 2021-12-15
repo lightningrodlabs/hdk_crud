@@ -7,6 +7,7 @@ pub fn is_valid_date_range(
     end: FetchEntriesTime,
 ) -> Result<(), WasmError> {
     match start.to_date_time() < end.to_date_time() {
+        // Here is where we could allow for start and end to be equal
         true => Ok(()),
         false => Err(err("invalid date range")),
     }
@@ -23,6 +24,7 @@ pub fn err(reason: &str) -> WasmError {
     WasmError::Guest(String::from(reason))
 }
 
+/// used to convert the last component of a path (in this cause, the hour of a day) into a string
 pub fn get_last_component_string(path_tag: LinkTag) -> ExternResult<String> {
     let hour_path = Path::try_from(&path_tag)?;
     let hour_components: Vec<hdk::hash_path::path::Component> = hour_path.into();

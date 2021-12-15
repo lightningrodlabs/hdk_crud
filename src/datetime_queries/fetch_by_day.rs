@@ -19,6 +19,7 @@ use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry
 pub struct FetchByDay {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByDay {
+    /// fetches all entries linked to a time path index for a certain day
     pub fn fetch_entries_by_day<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
     >(
@@ -33,7 +34,6 @@ impl FetchByDay {
         let children = path.children()?;
 
         let entries = children
-            .into_inner()
             .into_iter()
             .map(|hour_link| {
                 let hour_str = get_last_component_string(hour_link.tag)?;
@@ -122,7 +122,7 @@ mod tests {
         // here we are assuming there is only one hour component to the day path, however if we wanted to
         // make sure the code properly cycles through each hour component, we would add extra Link elements
         // to the below vector
-        let get_links_output = vec![Links::from(vec![link_output])];
+        let get_links_output = vec![vec![link_output]];
 
         mock_hdk
             .expect_get_links()

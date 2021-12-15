@@ -2,7 +2,7 @@
 /// from having just a Holochain entry definition
 /// to having a full create-read-update-delete set of
 /// functionality in your Zome, "signals" (events), as well as
-/// time based queries.
+/// time based indexing and queries.
 /// See [example] for a comprehensive look at how this works.
 /// ```ignore
 /// use hdk::prelude::*;
@@ -58,7 +58,7 @@ macro_rules! crud {
             Path::from([<$i:upper _PATH>])
           }
 
-          #[doc ="This is what is expected by a call to [update_" $path "] or [inner_update_" $path "]"]
+          #[doc ="This is what is expected by a call to [update_" $path "]"]
           #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SerializedBytes)]
           #[serde(rename_all = "camelCase")]
           pub struct [<$crud_type UpdateInput>] {

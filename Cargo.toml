@@ -8,17 +8,17 @@ authors = ["Connor Turland <connor@sprillow.com>"]
 edition = "2018"
 
 [dependencies]
-hdk = "0.0.109"
-holo_hash = { version = "0.0.8", features = ["encoding"] }
+hdk = "0.0.115"
+holo_hash = { version = "0.0.12", features = ["encoding"] }
 paste = "1.0.5"
 serde = "1.0.123"
 thiserror = "1"
 mockall = "0.9"
-fixt = { version = "0.0.6", optional = true }
+fixt = { version = "0.0.7", optional = true }
 mockall_double = { version = "0.2.0", optional = true }
 chrono = "0.4.19"
 assert_matches = "1.5.0"
-holochain_types = { version = "0.0.9", optional = true }
+holochain_types = { version = "0.0.15", optional = true }
 
 [dev-dependencies]
 rand = "0.7"

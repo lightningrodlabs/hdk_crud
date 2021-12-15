@@ -7,18 +7,21 @@ use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 #[cfg(feature = "mock")]
 use ::mockall::automock;
 
+/// an enum passed into create_action to indicate whether the newly created entry is to be
+/// linked off a path (like an anchor for entry types) or a supplied entry hash
 pub enum PathOrEntryHash {
     Path(Path),
     EntryHash(EntryHash),
 }
 
+/// a struct which implements a [create_action](CreateAction::create_action) method
+/// a method is used instead of a function so that it can be mocked to simplify unit testing
 #[derive(Debug, PartialEq, Clone)]
 pub struct CreateAction {}
 #[cfg_attr(feature = "mock", automock)]
 impl CreateAction {
-    /// This will create an entry and link it off the main Path.
-    /// It can also optionally send a signal of this event (by passing `send_signal` value `true`)
-    /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
+    /// This will create an entry and will either link it off the main Path or a supplied entry hash.
+    /// It can also optionally send a signal of this event to all peers supplied in `send_signal_to_peers`
     /// uses `ChainTopOrdering::Relaxed` such that multiple creates can be committed in parallel
     pub fn create_action<T, E, S>(
         &self,

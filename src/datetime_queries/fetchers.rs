@@ -17,6 +17,8 @@ use super::{
     fetch_entries_from_hour_to_hour::MockFetchByHourHour as FetchByHourHour,
 };
 
+/// A struct containing all structs which implement fetching related methods.
+/// This way only an instance of this struct needs to be passed in to any one fetching method/function.
 #[cfg(feature = "mock")]
 use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
 pub struct Fetchers {

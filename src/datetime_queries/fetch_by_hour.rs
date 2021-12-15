@@ -13,6 +13,7 @@ use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry
 pub struct FetchByHour {}
 #[cfg_attr(feature = "mock", automock)]
 impl FetchByHour {
+    /// fetches all entries linked to a time path index for a particular hour on a specific day
     pub fn fetch_entries_by_hour<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
     >(
@@ -28,7 +29,6 @@ impl FetchByHour {
         let links = get_links(path.hash()?, None)?;
 
         let entries: Vec<WireElement<EntryType>> = links
-            .into_inner()
             .into_iter()
             .map(|link| {
                 get_latest_entry
@@ -76,7 +76,7 @@ mod tests {
             create_link_hash: fixt![HeaderHash],
         };
 
-        let get_links_output = vec![Links::from(vec![link_output.clone()])];
+        let get_links_output = vec![vec![link_output.clone()]];
 
         mock_hdk
             .expect_get_links()
