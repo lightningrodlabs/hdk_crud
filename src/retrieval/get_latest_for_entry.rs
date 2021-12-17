@@ -31,7 +31,6 @@ impl GetLatestEntry {
         &self,
         entry_hash: EntryHash,
         get_options: GetOptions,
-    // ) -> ExternResult<OptionEntryAndHash<T>> {
     ) -> ExternResult<Option<WireElement<T>>> {
         match get_details(entry_hash.clone(), get_options.clone())? {
             Some(Details::Entry(details)) => match details.entry_dht_status {
@@ -39,7 +38,7 @@ impl GetLatestEntry {
                     let created_at = details.headers.first().unwrap().header().timestamp(); // TODO: better error handling (avoid unwrap)
                     match details.updates.len() {
                     // pass out the header associated with this entry
-                    0 => {//Some(get_header_hash(details.headers.first().unwrap().to_owned()))
+                    0 => {
                         let updated_at = created_at.clone();
                         let maybe_entry_and_hashes = entry_and_hashes(get_header_hash(details.headers.first().unwrap().to_owned()), get_options)?;
                         match maybe_entry_and_hashes {
@@ -59,7 +58,6 @@ impl GetLatestEntry {
                         sortlist.sort_by_key(|update| update.header().timestamp().as_millis());
                         // sorts in ascending order, so take the last element
                         let last = sortlist.last().unwrap().to_owned();
-                        // Some(get_header_hash(last))
                         let updated_at = last.header().timestamp();
                         let maybe_entry_and_hashes = entry_and_hashes(get_header_hash(last), get_options)?;
                         match maybe_entry_and_hashes {

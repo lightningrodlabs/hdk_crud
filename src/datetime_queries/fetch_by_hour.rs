@@ -84,7 +84,6 @@ mod tests {
             .times(1)
             .return_const(Ok(get_links_output));
 
-        // let get_latest_output = Some((Example { number: 1 }, fixt![HeaderHash], fixt![EntryHash]));
         let get_latest_output = Some(WireElement::<Example> {
             header_hash: fixt![HeaderHashB64],
             entry_hash: fixt![EntryHashB64],
