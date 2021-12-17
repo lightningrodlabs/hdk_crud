@@ -15,6 +15,8 @@ pub struct WireElement<T> {
     pub header_hash: HeaderHashB64,
     pub entry_hash: EntryHashB64,
     pub entry: T,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 impl<T> From<EntryAndHash<T>> for WireElement<T> {
