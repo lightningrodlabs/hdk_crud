@@ -68,6 +68,8 @@ mod tests {
             header_hash: fixt![HeaderHashB64],
             entry_hash: fixt![EntryHashB64],
             entry: Example { number: 1 },
+            created_at: fixt![Timestamp],
+            updated_at: fixt![Timestamp],
         };
         let wire_vec: Vec<WireElement<Example>> = vec![wire_element.clone()];
         let wire_vec2 = vec![wire_element.clone(), wire_element.clone()];

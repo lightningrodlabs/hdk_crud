@@ -142,6 +142,8 @@ mod tests {
             header_hash: fixt![HeaderHashB64],
             entry_hash: fixt![EntryHashB64],
             entry: Example { number: 1 },
+            created_at: fixt![Timestamp],
+            updated_at: fixt![Timestamp],
         };
         let hour_entries: Vec<WireElement<Example>> = vec![hour_entry];
         // set up a mock of fetch_entries_by_hour
