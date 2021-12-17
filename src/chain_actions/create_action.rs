@@ -79,11 +79,13 @@ impl CreateAction {
                 create_link(time_path.hash()?, entry_hash.clone(), ())?;
             }
         }
-
+        let time = sys_time()?; // this won't exactly match the timestamp stored in the element details
         let wire_entry: WireElement<T> = WireElement {
             entry,
             header_hash: HeaderHashB64::new(address),
             entry_hash: EntryHashB64::new(entry_hash),
+            created_at: time,
+            updated_at: time,
         };
 
         match send_signal_to_peers {

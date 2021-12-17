@@ -60,10 +60,19 @@ impl UpdateAction {
                 create_link(time_path.hash()?, entry_address.clone(), ())?;
             }
         }
+        let updated_at = sys_time()?;
+        // get create time from the header_hash
+        let maybe_element = get::<HeaderHash>(header_hash.clone().into(), GetOptions::default())?;
+        let created_at = match maybe_element {
+            Some(element) => Ok(element.signed_header().header().timestamp()),
+            None => Err(WasmError::Guest(String::from("unable to get element from provided header hash"))),
+        }?;
         let wire_entry: WireElement<T> = WireElement {
             entry,
             header_hash,
             entry_hash: EntryHashB64::new(entry_address),
+            created_at,
+            updated_at,
         };
         match send_signal_to_peers {
             None => (),

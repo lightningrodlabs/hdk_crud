@@ -19,12 +19,12 @@ pub struct WireElement<T> {
     pub updated_at: Timestamp,
 }
 
-impl<T> From<EntryAndHash<T>> for WireElement<T> {
-    fn from(e: EntryAndHash<T>) -> Self {
-        Self {
-            entry: e.0,
-            header_hash: HeaderHashB64::new(e.1),
-            entry_hash: EntryHashB64::new(e.2),
-        }
-    }
-}
+// impl<T> From<EntryAndHash<T>> for WireElement<T> {
+//     fn from(e: EntryAndHash<T>) -> Self {
+//         Self {
+//             entry: e.0,
+//             header_hash: HeaderHashB64::new(e.1),
+//             entry_hash: EntryHashB64::new(e.2),
+//         }
+//     }
+// }
