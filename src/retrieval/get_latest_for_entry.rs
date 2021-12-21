@@ -59,7 +59,7 @@ impl GetLatestEntry {
                         // sorts in ascending order, so take the last element
                         let last = sortlist.last().unwrap().to_owned();
                         let updated_at = last.header().timestamp();
-                        let maybe_entry_and_hashes = entry_and_hashes(get_header_hash(last), get_options)?;
+                        let maybe_entry_and_hashes = original_header_hash_with_entry(get_header_hash(last), get_options)?;
                         match maybe_entry_and_hashes {
                             Some(entry_and_hashes) => Ok(Some(WireElement {
                                 header_hash: entry_and_hashes.1.into(),
@@ -81,7 +81,7 @@ impl GetLatestEntry {
     }
 }
 
-fn entry_and_hashes<
+fn original_header_hash_with_entry<
     T: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
 >(
     header_hash: HeaderHash,
