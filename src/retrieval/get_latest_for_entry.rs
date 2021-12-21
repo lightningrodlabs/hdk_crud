@@ -35,12 +35,13 @@ impl GetLatestEntry {
         match get_details(entry_hash.clone(), get_options.clone())? {
             Some(Details::Entry(details)) => match details.entry_dht_status {
                 metadata::EntryDhtStatus::Live => {
-                    let created_at = details.headers.first().unwrap().header().timestamp(); // TODO: better error handling (avoid unwrap)
+                    let first_header = details.headers.first().unwrap();
+                    let created_at = first_header.header().timestamp();
                     match details.updates.len() {
                     // pass out the header associated with this entry
                     0 => {
                         let updated_at = created_at.clone();
-                        let maybe_entry_and_hashes = entry_and_hashes(get_header_hash(details.headers.first().unwrap().to_owned()), get_options)?;
+                        let maybe_entry_and_hashes = original_header_hash_with_entry(get_header_hash(first_header.to_owned()), get_options)?;
                         match maybe_entry_and_hashes {
                             Some(entry_and_hashes) => Ok(Some(WireElement {
                                 header_hash: entry_and_hashes.1.into(),
