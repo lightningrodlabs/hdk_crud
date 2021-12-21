@@ -62,7 +62,7 @@ impl UpdateAction {
         }
         let updated_at = sys_time()?;
         // get create time from the header_hash
-        let maybe_element = get::<HeaderHash>(header_hash.clone().into(), GetOptions::default())?;
+        let maybe_element = get(HeaderHash::from(header_hash.clone()), GetOptions::default())?;
         let created_at = match maybe_element {
             Some(element) => Ok(element.signed_header().header().timestamp()),
             None => Err(WasmError::Guest(String::from("unable to get element from provided header hash"))),
