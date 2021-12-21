@@ -84,7 +84,13 @@ mod tests {
             .times(1)
             .return_const(Ok(get_links_output));
 
-        let get_latest_output = Some((Example { number: 1 }, fixt![HeaderHash], fixt![EntryHash]));
+        let get_latest_output = Some(WireElement::<Example> {
+            header_hash: fixt![HeaderHashB64],
+            entry_hash: fixt![EntryHashB64],
+            entry: Example { number: 1 },
+            created_at: fixt![Timestamp],
+            updated_at: fixt![Timestamp],
+        });
 
         // set up a mock of get_latest_for_entry
         let mut mock_get_latest = get_latest_for_entry::MockGetLatestEntry::new();
