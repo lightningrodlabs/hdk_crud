@@ -9,6 +9,7 @@ use ::mockall::automock;
 
 /// an enum passed into create_action to indicate whether the newly created entry is to be
 /// linked off a path (like an anchor for entry types) or a supplied entry hash
+#[derive(Debug, PartialEq, Clone)]
 pub enum PathOrEntryHash {
     Path(Path),
     EntryHash(EntryHash),
