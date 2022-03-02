@@ -31,13 +31,16 @@ impl FetchByDay {
     ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
         let path = day_path_from_date(base_component.clone(), time.year, time.month, time.day);
         // TODO: wrap in path.exists which would add extra hdk calls to be mocked in the test
+        // let children_paths = path.children_paths()?;
         let children = path.children()?;
-
+        // let children = path.children_paths()?;
+        println!("children result: {:?}", children);
         let entries = children
             .into_iter()
             .map(|hour_link| {
                 let hour_str = get_last_component_string(hour_link.tag)?;
-
+                // let hour_str = String::try_from(hour_link.leaf().ok_or(WasmError::Guest(String::from("no component found")))?)?;
+                println!("hour string: {:?}", hour_str);
                 let hour = hour_str.parse::<u32>().or(Err(err("Invalid path")))?;
                 fetch_by_hour.fetch_entries_by_hour::<EntryType>(
                     &get_latest_entry,
@@ -63,7 +66,7 @@ mod tests {
     use crate::retrieval::get_latest_for_entry;
     use crate::wire_element::WireElement;
     use ::fixt::prelude::*;
-    use hdk::hash_path::path::NAME;
+    use hdk::hash_path::path::DHT_PREFIX;
     use hdk::prelude::*;
     use holochain_types::prelude::ElementFixturator;
 
@@ -74,19 +77,48 @@ mod tests {
         // when fetch_entries_by_day calls path.children(), assuming the path already exists, the following hdk
         // functions are called: hash_entry, get, hash_entry, get_links
 
+        // when fetch_entries_by_day calls path.children_paths(), assuming the path already exists, the following hdk
+        // functions are called: hash_entry, get, hash_entry, get_links
+
         // set up for the first expected hash_entry call
+        // let path = Path::from("create.2021-10-15");
+        // let path_entry = Entry::try_from(path.clone()).unwrap();
+        // let path_hash = fixt!(EntryHash);
+        // mock_hdk
+        //     .expect_hash_entry()
+        //     .with(mockall::predicate::eq(path_entry.clone()))
+        //     .times(1)
+        //     .return_const(Ok(path_hash.clone()));
         let path = Path::from("create.2021-10-15");
-        let path_entry = Entry::try_from(path.clone()).unwrap();
         let path_hash = fixt!(EntryHash);
+        let path_entry = PathEntry::new(path_hash.clone());
+        let path_entry_hash = fixt!(EntryHash);
         mock_hdk
             .expect_hash_entry()
-            .with(mockall::predicate::eq(path_entry.clone()))
+            .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
             .times(1)
             .return_const(Ok(path_hash.clone()));
 
-        // set up for expected get call
+        mock_hdk
+            .expect_hash_entry()
+            .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+            .times(1)
+            .return_const(Ok(path_entry_hash.clone()));
+        mock_hdk
+            .expect_hash_entry()
+            .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
+            .times(1)
+            .return_const(Ok(path_hash.clone()));
+
+        mock_hdk
+            .expect_hash_entry()
+            .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+            .times(1)
+            .return_const(Ok(path_entry_hash.clone()));
+
+        // // set up for expected get call
         let path_get_input = vec![GetInput::new(
-            AnyDhtHash::from(path_hash.clone()),
+            AnyDhtHash::from(path_entry_hash.clone()),
             GetOptions::content(),
         )];
         let expected_get_output = vec![Some(fixt!(Element))]; // this should return the path
@@ -96,21 +128,35 @@ mod tests {
             .times(1)
             .return_const(Ok(expected_get_output));
 
-        mock_hdk
-            .expect_hash_entry()
-            .with(mockall::predicate::eq(path_entry.clone()))
-            .times(1)
-            .return_const(Ok(path_hash.clone()));
+        // mock_hdk
+        //     .expect_hash_entry()
+        //     .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+        //     .times(1)
+        //     .return_const(Ok(path_hash.clone()));
 
         // set up input for get links, the second parameter is the default used by the Holochain code
         let get_links_input = vec![GetLinksInput::new(
-            path_hash,
-            Some(holochain_zome_types::link::LinkTag::new(NAME)),
+            path_entry_hash,
+            Some(holochain_zome_types::link::LinkTag::new([DHT_PREFIX])),
         )];
 
         // creating an expected output of get_links, which is a Vec<Links>, and Links is a Vec<Link>
         // since the link tag is used to get the hour component from the path, it must be constructed properly
-        let link_tag: LinkTag = LinkTag::try_from(&Path::from("create.2021-10-15.10")).unwrap();
+        // let link_tag: LinkTag = LinkTag::try_from(&Path::from("create.2021-10-15.10")).unwrap();
+        let bytes: Vec<u8> = "10".try_into().unwrap();
+        // let link_tag: LinkTag = LinkTag::try_from(SerializedBytes::from(UnsafeBytes::from("10"))).unwrap();
+        // let link_tag: LinkTag = LinkTag::new(bytes);
+        // let link_tag: LinkTag = LinkTag::new(bytes);
+        let link_tag = LinkTag::new(
+            [DHT_PREFIX]
+                .iter()
+                .chain(
+                    bytes 
+                    .iter(),
+                )
+                .cloned()
+                .collect::<Vec<u8>>(),
+            );
 
         let link_output = Link {
             target: fixt![EntryHash],

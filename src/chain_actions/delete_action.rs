@@ -27,7 +27,7 @@ impl DeleteAction {
         S: 'static + From<crate::signals::ActionSignal<T>> + serde::Serialize + std::fmt::Debug,
         E: 'static,
     {
-        delete_entry(header_hash.clone().into())?;
+        delete_entry(DeleteInput::new(header_hash.clone().into(), ChainTopOrdering::Relaxed))?;
         match send_signal_to_peers {
             None => (),
             Some(vec_peers) => {

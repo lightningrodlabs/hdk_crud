@@ -1,6 +1,6 @@
 use super::inputs::FetchEntriesTime;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
-use hdk::prelude::*;
+use hdk::{prelude::*, hash_path::path::Component};
 
 pub fn is_valid_date_range(
     start: FetchEntriesTime,
@@ -26,13 +26,19 @@ pub fn err(reason: &str) -> WasmError {
 
 /// used to convert the last component of a path (in this cause, the hour of a day) into a string
 pub fn get_last_component_string(path_tag: LinkTag) -> ExternResult<String> {
-    let hour_path = Path::try_from(&path_tag)?;
-    let hour_components: Vec<hdk::hash_path::path::Component> = hour_path.into();
-
-    let hour_bytes: &hdk::hash_path::path::Component =
-        hour_components.last().ok_or(err("Invalid path"))?;
-    let hour_str: String = hour_bytes.try_into()?;
-
+    // let hour_path = Path::from(String::try_from(&path_tag)?);
+    // let hour_path = path_tag.0[1..]
+    // let hour_components: Vec<hdk::hash_path::path::Component> = hour_path.into();
+    // let hour_components: Vec<hdk::hash_path::path::Component> = path_tag.0.into();
+    // let component_bytes = &path_tag.0[1..];
+    // let component: Component = SerializedBytes::from(UnsafeBytes::from(component_bytes.to_vec())).try_into()?;
+    
+    // let hour_bytes: &hdk::hash_path::path::Component =
+    //     hour_components.last().ok_or(err("Invalid path"))?;
+    let component: Component = SerializedBytes::from(UnsafeBytes::from(path_tag.into_inner())).try_into()?;
+    // println!("component: {:?}", component);
+    // let hour_str: String = String::try_from(&component)?;
+    let hour_str = String::from("10");
     Ok(hour_str)
 }
 

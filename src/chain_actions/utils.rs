@@ -23,6 +23,6 @@ pub fn add_current_time_path(base_component: String, entry_address: EntryHash) -
     );
 
     time_path.ensure()?;
-    create_link(time_path.hash()?, entry_address.clone(), ())?;
+    create_link(time_path.path_entry_hash()?, entry_address.clone(), ())?;
     Ok(())
 }

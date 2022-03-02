@@ -52,7 +52,7 @@ impl CreateAction {
                 PathOrEntryHash::Path(path) => {
                     // link off entry path
                     path.ensure()?;
-                    let path_hash = path.hash()?;
+                    let path_hash = path.path_entry_hash()?;
                     create_link(path_hash, entry_hash.clone(), ())?;
                 }
                 PathOrEntryHash::EntryHash(base_entry_hash) => {
