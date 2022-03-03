@@ -74,9 +74,7 @@ mod tests {
         let get_links_input = vec![GetLinksInput::new(path_entry_hash, None)];
 
         // creating an expected output of get_links, which is a Vec<Links>, and Links is a Vec<Link>
-        // let link_tag: LinkTag = LinkTag::try_from(&Path::from("create.2021-10-15.10")).unwrap();
         let bytes: Vec<u8> = "10".try_into().unwrap();
-        // let link_tag: LinkTag = LinkTag::try_from(SerializedBytes::from(UnsafeBytes::from("10"))).unwrap();
         let link_tag: LinkTag = LinkTag::new(bytes);
 
         let link_output = Link {

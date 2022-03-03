@@ -32,7 +32,6 @@ impl FetchByDay {
         let path = day_path_from_date(base_component.clone(), time.year, time.month, time.day);
         // TODO: wrap in path.exists which would add extra hdk calls to be mocked in the test
         let children = path.children()?;
-        println!("children result: {:?}", children);
         let entries = children
             .into_iter()
             .map(|hour_link| {
@@ -122,12 +121,7 @@ mod tests {
 
         // creating an expected output of get_links, which is a Vec<Links>, and Links is a Vec<Link>
         // since the link tag is used to get the hour component from the path, it must be constructed properly
-        // let link_tag: LinkTag = LinkTag::try_from(&Path::from("create.2021-10-15.10")).unwrap();
         let hour_component = Component::from(String::from("10"));
-        let bytes: Vec<u8> = "10".try_into().unwrap();
-        // let link_tag: LinkTag = LinkTag::try_from(SerializedBytes::from(UnsafeBytes::from("10"))).unwrap();
-        // let link_tag: LinkTag = LinkTag::new(bytes);
-        // let link_tag: LinkTag = LinkTag::new(bytes);
         let link_tag = LinkTag::new(
             [DHT_PREFIX]
                 .iter()
