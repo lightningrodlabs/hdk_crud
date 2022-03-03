@@ -26,7 +26,7 @@ impl FetchByHour {
         base_component: String,
     ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
         let path = hour_path_from_date(base_component.clone(), year, month, day, hour);
-        let links = get_links(path.hash()?, None)?;
+        let links = get_links(path.path_entry_hash()?, None)?;
 
         let entries: Vec<WireElement<EntryType>> = links
             .into_iter()
@@ -56,18 +56,26 @@ mod tests {
 
         // set up for the first expected hash_entry call
         let path = Path::from("create.2021-10-15.10");
-        let path_entry = Entry::try_from(path.clone()).unwrap();
         let path_hash = fixt!(EntryHash);
+        let path_entry = PathEntry::new(path_hash.clone());
+        let path_entry_hash = fixt!(EntryHash);
         mock_hdk
             .expect_hash_entry()
-            .with(mockall::predicate::eq(path_entry.clone()))
+            .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
             .times(1)
             .return_const(Ok(path_hash.clone()));
 
-        let get_links_input = vec![GetLinksInput::new(path_hash, None)];
+        mock_hdk
+            .expect_hash_entry()
+            .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+            .times(1)
+            .return_const(Ok(path_entry_hash.clone()));
+
+        let get_links_input = vec![GetLinksInput::new(path_entry_hash, None)];
 
         // creating an expected output of get_links, which is a Vec<Links>, and Links is a Vec<Link>
-        let link_tag: LinkTag = LinkTag::try_from(&Path::from("create.2021-10-15.10")).unwrap();
+        let bytes: Vec<u8> = "10".try_into().unwrap();
+        let link_tag: LinkTag = LinkTag::new(bytes);
 
         let link_output = Link {
             target: fixt![EntryHash],
