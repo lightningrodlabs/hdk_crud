@@ -1,6 +1,5 @@
-use crate::chain_actions::utils::now_date_time;
+use crate::chain_actions::utils::add_current_time_path;
 use crate::wire_element::WireElement;
-use chrono::{DateTime, Datelike, Timelike, Utc};
 use hdk::prelude::*;
 use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 
@@ -46,18 +45,7 @@ impl UpdateAction {
             None => (),
             Some(base_component) => {
                 // create a time_path
-                let date: DateTime<Utc> = now_date_time()?;
-
-                let time_path = crate::datetime_queries::utils::hour_path_from_date(
-                    base_component,
-                    date.year(),
-                    date.month(),
-                    date.day(),
-                    date.hour(),
-                );
-
-                time_path.ensure()?;
-                create_link(time_path.hash()?, entry_address.clone(), ())?;
+                add_current_time_path(base_component, entry_address.clone())?;
             }
         }
         let updated_at = sys_time()?;

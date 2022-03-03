@@ -1,6 +1,5 @@
-use crate::chain_actions::utils::now_date_time;
+use crate::chain_actions::utils::add_current_time_path;
 use crate::wire_element::WireElement;
-use chrono::{DateTime, Datelike, Timelike, Utc};
 use hdk::prelude::*;
 use holo_hash::{AgentPubKey, EntryHashB64, HeaderHashB64};
 
@@ -9,6 +8,7 @@ use ::mockall::automock;
 
 /// an enum passed into create_action to indicate whether the newly created entry is to be
 /// linked off a path (like an anchor for entry types) or a supplied entry hash
+#[derive(Debug, PartialEq, Clone)]
 pub enum PathOrEntryHash {
     Path(Path),
     EntryHash(EntryHash),
@@ -52,7 +52,7 @@ impl CreateAction {
                 PathOrEntryHash::Path(path) => {
                     // link off entry path
                     path.ensure()?;
-                    let path_hash = path.hash()?;
+                    let path_hash = path.path_entry_hash()?;
                     create_link(path_hash, entry_hash.clone(), ())?;
                 }
                 PathOrEntryHash::EntryHash(base_entry_hash) => {
@@ -65,18 +65,7 @@ impl CreateAction {
             None => (),
             Some(base_component) => {
                 // create a time_path
-                let date: DateTime<Utc> = now_date_time()?;
-
-                let time_path = crate::datetime_queries::utils::hour_path_from_date(
-                    base_component,
-                    date.year(),
-                    date.month(),
-                    date.day(),
-                    date.hour(),
-                );
-
-                time_path.ensure()?;
-                create_link(time_path.hash()?, entry_hash.clone(), ())?;
+                add_current_time_path(base_component, entry_hash.clone())?;
             }
         }
         let time = sys_time()?; // this won't exactly match the timestamp stored in the element details

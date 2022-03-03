@@ -34,7 +34,7 @@ impl FetchEntries {
     ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
         match fetch_options {
             FetchOptions::All => {
-                let path_hash = entry_path.hash()?;
+                let path_hash = entry_path.path_entry_hash()?;
                 fetch_links.fetch_links::<EntryType>(get_latest, path_hash, get_options)
                 // TODO: will have to instantiate or pass in the struct
             }
