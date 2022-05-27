@@ -57,28 +57,34 @@ mod tests {
         // set up for the first expected hash_entry call
         let path = Path::from("create.2021-10-15.10");
         let path_hash = fixt!(EntryHash);
+        let path_hash_2 = path_hash.clone();
         let path_entry = PathEntry::new(path_hash.clone());
         let path_entry_hash = fixt!(EntryHash);
+        let path_entry_hash_2 = path_entry_hash.clone();
         mock_hdk
             .expect_hash()
-            .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
+            .with(mockall::predicate::eq(HashInput::Entry(
+                Entry::try_from(path.clone()).unwrap(),
+            )))
             .times(1)
-            .return_const(Ok(path_hash.clone()));
+            .return_once(move |_| Ok(HashOutput::Entry(path_hash_2.clone())));
 
         mock_hdk
             .expect_hash()
-            .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+            .with(mockall::predicate::eq(HashInput::Entry(
+                Entry::try_from(path_entry.clone()).unwrap(),
+            )))
             .times(1)
-            .return_const(Ok(path_entry_hash.clone()));
+            .return_once(move |_| Ok(HashOutput::Entry(path_entry_hash_2.clone())));
 
-        let get_links_input = vec![GetLinksInput::new(path_entry_hash, None)];
+        let get_links_input = vec![GetLinksInput::new(path_entry_hash.into(), None)];
 
         // creating an expected output of get_links, which is a Vec<Links>, and Links is a Vec<Link>
         let bytes: Vec<u8> = "10".try_into().unwrap();
         let link_tag: LinkTag = LinkTag::new(bytes);
 
         let link_output = Link {
-            target: fixt![EntryHash],
+            target: fixt![EntryHash].into(),
             timestamp: fixt![Timestamp],
             tag: link_tag,
             create_link_hash: fixt![HeaderHash],
@@ -105,7 +111,7 @@ mod tests {
         mock_get_latest
             .expect_get_latest_for_entry::<Example>()
             .with(
-                mockall::predicate::eq(link_output.target),
+                mockall::predicate::eq(EntryHash::from(link_output.target)),
                 mockall::predicate::eq(GetOptions::latest()),
             )
             .times(1)

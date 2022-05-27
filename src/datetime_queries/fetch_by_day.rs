@@ -61,7 +61,7 @@ mod tests {
     use crate::retrieval::get_latest_for_entry;
     use crate::wire_element::WireElement;
     use ::fixt::prelude::*;
-    use hdk::hash_path::path::{DHT_PREFIX, Component};
+    use hdk::hash_path::path::Component;
     use hdk::prelude::*;
     use holochain_types::prelude::ElementFixturator;
 
@@ -73,33 +73,46 @@ mod tests {
         // functions are called: hash_entry x4, get, get_links
 
         // set up for the first expected hash_entry call
-        
+
         let path = Path::from("create.2021-10-15");
         let path_hash = fixt!(EntryHash);
+        let path_hash_2 = path_hash.clone();
+        let path_hash_3 = path_hash.clone();
         let path_entry = PathEntry::new(path_hash.clone());
         let path_entry_hash = fixt!(EntryHash);
+        let path_entry_hash_2 = path_entry_hash.clone();
+        let path_entry_hash_3 = path_entry_hash.clone();
         mock_hdk
             .expect_hash()
-            .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
+            .with(mockall::predicate::eq(HashInput::Entry(
+                Entry::try_from(path.clone()).unwrap(),
+            )))
             .times(1)
-            .return_const(Ok(path_hash.clone()));
+            .return_once(move |_| Ok(HashOutput::Entry(path_hash_2)));
 
         mock_hdk
             .expect_hash()
-            .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+            .with(mockall::predicate::eq(HashInput::Entry(
+                Entry::try_from(path_entry.clone()).unwrap(),
+            )))
             .times(1)
-            .return_const(Ok(path_entry_hash.clone()));
-        mock_hdk
-            .expect_hash()
-            .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
-            .times(1)
-            .return_const(Ok(path_hash.clone()));
+            .return_once(move |_| Ok(HashOutput::Entry(path_entry_hash_2)));
 
         mock_hdk
             .expect_hash()
-            .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+            .with(mockall::predicate::eq(HashInput::Entry(
+                Entry::try_from(path.clone()).unwrap(),
+            )))
             .times(1)
-            .return_const(Ok(path_entry_hash.clone()));
+            .return_once(move |_| Ok(HashOutput::Entry(path_hash_3)));
+
+        mock_hdk
+            .expect_hash()
+            .with(mockall::predicate::eq(HashInput::Entry(
+                Entry::try_from(path_entry.clone()).unwrap(),
+            )))
+            .times(1)
+            .return_once(move |_| Ok(HashOutput::Entry(path_entry_hash_3)));
 
         // // set up for expected get call
         let path_get_input = vec![GetInput::new(
@@ -115,26 +128,19 @@ mod tests {
 
         // set up input for get links, the second parameter is the default used by the Holochain code
         let get_links_input = vec![GetLinksInput::new(
-            path_entry_hash,
-            Some(holochain_zome_types::link::LinkTag::new([DHT_PREFIX])),
+            path_entry_hash.into(),
+            Some(holochain_zome_types::link::LinkTag::new(Vec::new())),
         )];
 
         // creating an expected output of get_links, which is a Vec<Links>, and Links is a Vec<Link>
         // since the link tag is used to get the hour component from the path, it must be constructed properly
         let hour_component = Component::from(String::from("10"));
-        let link_tag = LinkTag::new(
-            [DHT_PREFIX]
-                .iter()
-                .chain(
-                    <Vec<u8>>::from(UnsafeBytes::from(SerializedBytes::try_from(hour_component).unwrap()))
-                    .iter(),
-                )
-                .cloned()
-                .collect::<Vec<u8>>(),
-            );
+        let link_tag = LinkTag::new(<Vec<u8>>::from(UnsafeBytes::from(
+            SerializedBytes::try_from(hour_component).unwrap(),
+        )));
 
         let link_output = Link {
-            target: fixt![EntryHash],
+            target: fixt![EntryHash].into(),
             timestamp: fixt![Timestamp],
             tag: link_tag,
             create_link_hash: fixt![HeaderHash],
