@@ -1,6 +1,6 @@
-use chrono::{DateTime, NaiveDateTime, Utc, Datelike, Timelike};
-use holo_hash::EntryHash;
+use chrono::{DateTime, Datelike, NaiveDateTime, Timelike, Utc};
 use hdk::prelude::*;
+use holo_hash::EntryHash;
 
 /// get the current UTC date time
 pub fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
@@ -11,7 +11,7 @@ pub fn now_date_time() -> ExternResult<::chrono::DateTime<::chrono::Utc>> {
     Ok(date)
 }
 
-pub fn add_current_time_path(base_component: String, entry_address: EntryHash) -> ExternResult<()>{
+pub fn add_current_time_path(base_component: String, entry_address: EntryHash) -> ExternResult<()> {
     let date: DateTime<Utc> = now_date_time()?;
 
     let time_path = crate::datetime_queries::utils::hour_path_from_date(
@@ -23,6 +23,11 @@ pub fn add_current_time_path(base_component: String, entry_address: EntryHash) -
     );
 
     time_path.ensure()?;
-    create_link(time_path.path_entry_hash()?, entry_address.clone(), ())?;
+    create_link(
+        time_path.path_entry_hash()?,
+        entry_address.clone(),
+        HdkLinkType::Any,
+        LinkTag::from(Vec::new()),
+    )?;
     Ok(())
 }

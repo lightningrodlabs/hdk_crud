@@ -79,24 +79,24 @@ mod tests {
         let path_entry = PathEntry::new(path_hash.clone());
         let path_entry_hash = fixt!(EntryHash);
         mock_hdk
-            .expect_hash_entry()
+            .expect_hash()
             .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
             .times(1)
             .return_const(Ok(path_hash.clone()));
 
         mock_hdk
-            .expect_hash_entry()
+            .expect_hash()
             .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
             .times(1)
             .return_const(Ok(path_entry_hash.clone()));
         mock_hdk
-            .expect_hash_entry()
+            .expect_hash()
             .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
             .times(1)
             .return_const(Ok(path_hash.clone()));
 
         mock_hdk
-            .expect_hash_entry()
+            .expect_hash()
             .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
             .times(1)
             .return_const(Ok(path_entry_hash.clone()));

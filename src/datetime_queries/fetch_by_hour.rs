@@ -32,7 +32,7 @@ impl FetchByHour {
             .into_iter()
             .map(|link| {
                 get_latest_entry
-                    .get_latest_for_entry::<EntryType>(link.target, GetOptions::latest())
+                    .get_latest_for_entry::<EntryType>(link.target.into(), GetOptions::latest())
             })
             .filter_map(Result::ok)
             .filter_map(identity)
@@ -60,13 +60,13 @@ mod tests {
         let path_entry = PathEntry::new(path_hash.clone());
         let path_entry_hash = fixt!(EntryHash);
         mock_hdk
-            .expect_hash_entry()
+            .expect_hash()
             .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
             .times(1)
             .return_const(Ok(path_hash.clone()));
 
         mock_hdk
-            .expect_hash_entry()
+            .expect_hash()
             .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
             .times(1)
             .return_const(Ok(path_entry_hash.clone()));

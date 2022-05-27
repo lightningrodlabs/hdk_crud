@@ -28,8 +28,10 @@ impl FetchLinks {
         Ok(get_links(entry_hash, None)?
             .into_iter()
             .map(|link: link::Link| {
-                get_latest
-                    .get_latest_for_entry::<EntryType>(link.target.clone(), get_options.clone())
+                get_latest.get_latest_for_entry::<EntryType>(
+                    link.target.clone().into(),
+                    get_options.clone(),
+                )
             })
             .filter_map(Result::ok)
             .filter_map(identity)

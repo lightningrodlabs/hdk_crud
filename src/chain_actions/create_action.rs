@@ -53,11 +53,21 @@ impl CreateAction {
                     // link off entry path
                     path.ensure()?;
                     let path_hash = path.path_entry_hash()?;
-                    create_link(path_hash, entry_hash.clone(), ())?;
+                    create_link(
+                        path_hash,
+                        entry_hash.clone(),
+                        HdkLinkType::Any,
+                        LinkTag::from(Vec::new()),
+                    )?;
                 }
                 PathOrEntryHash::EntryHash(base_entry_hash) => {
                     // link off supplied entry hash
-                    create_link(base_entry_hash, entry_hash.clone(), ())?;
+                    create_link(
+                        base_entry_hash,
+                        entry_hash.clone(),
+                        HdkLinkType::Any,
+                        LinkTag::from(Vec::new()),
+                    )?;
                 }
             },
         }

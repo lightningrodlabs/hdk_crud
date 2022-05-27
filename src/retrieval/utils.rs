@@ -11,5 +11,5 @@ pub type OptionEntryAndHash<T> = Option<EntryAndHash<T>>;
 /// convert a SignedHeaderHashed which are like raw contents
 /// into the HeaderHash of itself
 pub fn get_header_hash(signed_header_hashed: element::SignedHeaderHashed) -> HeaderHash {
-    signed_header_hashed.header_hashed().as_hash().to_owned()
+    signed_header_hashed.as_hash().clone()
 }
