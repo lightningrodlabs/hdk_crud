@@ -1,6 +1,6 @@
 use hdk::prelude::*;
 
-use crate::{retrieval::utils::*, wire_record::WireRecord};
+use crate::{datetime_queries::utils::serialize_err, retrieval::utils::*, wire_record::WireRecord};
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
@@ -95,11 +95,7 @@ fn original_action_hash_with_entry<
     get_options: GetOptions,
 ) -> ExternResult<Option<(T, ActionHash, EntryHash)>> {
     match get(action_hash, get_options)? {
-        Some(record) => match record
-            .entry()
-            .to_app_option::<T>()
-            .map_err(|e| wasm_error!(WasmErrorInner::Serialize(e)))?
-        {
+        Some(record) => match record.entry().to_app_option::<T>().map_err(serialize_err)? {
             Some(entry) => Ok(Some((
                 entry,
                 match record.action() {

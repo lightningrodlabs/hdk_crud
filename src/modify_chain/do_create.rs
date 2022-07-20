@@ -1,5 +1,5 @@
-use crate::modify_chain::utils::add_current_time_path;
 use crate::wire_record::WireRecord;
+use crate::{datetime_queries::utils::serialize_err, modify_chain::utils::add_current_time_path};
 use hdk::{hash_path::path::TypedPath, prelude::*};
 use holo_hash::{ActionHashB64, AgentPubKey, EntryHashB64};
 
@@ -118,8 +118,7 @@ impl DoCreate {
                         data: crate::signals::SignalData::Create(wire_entry.clone()),
                     };
                 let signal = S::from(action_signal);
-                let payload = ExternIO::encode(signal)
-                    .map_err(|e| wasm_error!(WasmErrorInner::Serialize(e)))?;
+                let payload = ExternIO::encode(signal).map_err(serialize_err)?;
                 remote_signal(payload, vec_peers)?;
             }
         }
