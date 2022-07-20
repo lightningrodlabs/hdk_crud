@@ -1,5 +1,5 @@
 use crate::datetime_queries::utils::hour_path_from_date;
-use crate::wire_element::WireElement;
+use crate::wire_record::WireRecord;
 use hdk::prelude::*;
 
 #[cfg(feature = "mock")]
@@ -16,28 +16,37 @@ impl FetchByHour {
     /// fetches all entries linked to a time path index for a particular hour on a specific day
     pub fn fetch_entries_by_hour<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
+        TY,
+        E,
     >(
         &self,
         get_latest_entry: &GetLatestEntry,
+        link_type_filter: LinkTypeFilter,
+        link_type: TY,
         year: i32,
         month: u32,
         day: u32,
         hour: u32,
         base_component: String,
-    ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
-        let path = hour_path_from_date(base_component.clone(), year, month, day, hour);
-        let links = get_links(path.path_entry_hash()?, None)?;
+    ) -> Result<Vec<WireRecord<EntryType>>, WasmError>
+    where
+        ScopedLinkType: TryFrom<TY, Error = E>,
+        TY: Clone,
+        WasmError: From<E>,
+    {
+        let path = hour_path_from_date(link_type,  base_component.clone(), year, month, day, hour)?;
+        let links = get_links(path.path_entry_hash()?, link_type_filter, None)?;
 
-        let entries: Vec<WireElement<EntryType>> = links
+        let entries: Vec<WireRecord<EntryType>> = links
             .into_iter()
             .map(|link| {
                 get_latest_entry
-                    .get_latest_for_entry::<EntryType>(link.target, GetOptions::latest())
+                    .get_latest_for_entry::<EntryType>(link.target.into(), GetOptions::latest())
             })
             .filter_map(Result::ok)
             .filter_map(identity)
-            .map(|x| WireElement::from(x))
-            .collect::<Vec<WireElement<EntryType>>>();
+            .map(|x| WireRecord::from(x))
+            .collect::<Vec<WireRecord<EntryType>>>();
         Ok(entries)
     }
 }
@@ -46,7 +55,7 @@ impl FetchByHour {
 mod tests {
     use crate::crud::example::Example;
     use crate::retrieval::get_latest_for_entry;
-    use crate::wire_element::WireElement;
+    use crate::wire_record::WireRecord;
     use ::fixt::prelude::*;
     use hdk::prelude::*;
 
@@ -61,17 +70,21 @@ mod tests {
         let path_entry_hash = fixt!(EntryHash);
         mock_hdk
             .expect_hash_entry()
-            .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
+            .with(mockall::predicate::eq(
+                Entry::try_from(path.clone()).unwrap(),
+            ))
             .times(1)
             .return_const(Ok(path_hash.clone()));
 
         mock_hdk
             .expect_hash_entry()
-            .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+            .with(mockall::predicate::eq(
+                Entry::try_from(path_entry.clone()).unwrap(),
+            ))
             .times(1)
             .return_const(Ok(path_entry_hash.clone()));
 
-        let get_links_input = vec![GetLinksInput::new(path_entry_hash, None)];
+        let get_links_input = vec![GetLinksInput::new(path_entry_hash, None, None)];
 
         // creating an expected output of get_links, which is a Vec<Links>, and Links is a Vec<Link>
         let bytes: Vec<u8> = "10".try_into().unwrap();
@@ -81,7 +94,7 @@ mod tests {
             target: fixt![EntryHash],
             timestamp: fixt![Timestamp],
             tag: link_tag,
-            create_link_hash: fixt![HeaderHash],
+            create_link_hash: fixt![ActionHash],
         };
 
         let get_links_output = vec![vec![link_output.clone()]];
@@ -92,8 +105,8 @@ mod tests {
             .times(1)
             .return_const(Ok(get_links_output));
 
-        let get_latest_output = Some(WireElement::<Example> {
-            header_hash: fixt![HeaderHashB64],
+        let get_latest_output = Some(WireRecord::<Example> {
+            action_hash: fixt![ActionHashB64],
             entry_hash: fixt![EntryHashB64],
             entry: Example { number: 1 },
             created_at: fixt![Timestamp],
@@ -122,7 +135,7 @@ mod tests {
             10 as u32,
             base_component,
         );
-        let output = vec![WireElement::from(get_latest_output.unwrap())];
+        let output = vec![WireRecord::from(get_latest_output.unwrap())];
         assert_eq!(result, Ok(output));
     }
 }

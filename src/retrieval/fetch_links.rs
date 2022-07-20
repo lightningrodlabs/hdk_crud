@@ -3,7 +3,7 @@ use crate::retrieval::get_latest_for_entry::GetLatestEntry;
 #[cfg(feature = "mock")]
 use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
 
-use crate::wire_element::WireElement;
+use crate::wire_record::WireRecord;
 use hdk::prelude::*;
 use std::convert::identity;
 
@@ -23,17 +23,21 @@ impl FetchLinks {
         &self,
         get_latest: &GetLatestEntry,
         entry_hash: EntryHash,
+        link_type: LinkTypeFilter,
+        link_tag: Option<LinkTag>,
         get_options: GetOptions,
-    ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
-        Ok(get_links(entry_hash, None)?
+    ) -> Result<Vec<WireRecord<EntryType>>, WasmError> {
+        Ok(get_links(entry_hash, link_type, link_tag)?
             .into_iter()
             .map(|link: link::Link| {
-                get_latest
-                    .get_latest_for_entry::<EntryType>(link.target.clone(), get_options.clone())
+                get_latest.get_latest_for_entry::<EntryType>(
+                    link.target.clone().into(),
+                    get_options.clone(),
+                )
             })
             .filter_map(Result::ok)
             .filter_map(identity)
-            .map(|x| WireElement::from(x))
+            .map(|x| WireRecord::from(x))
             .collect())
     }
 }

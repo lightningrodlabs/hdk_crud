@@ -1,6 +1,6 @@
 use super::fetchers::Fetchers;
 use super::inputs::FetchEntriesTime;
-use crate::wire_element::WireElement;
+use crate::wire_record::WireRecord;
 use chrono::Duration;
 use hdk::prelude::*;
 
@@ -13,20 +13,31 @@ pub struct FetchByDayDay {}
 impl FetchByDayDay {
     pub fn fetch_entries_from_day_to_day<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
+        TY,
+        E,
     >(
         &self,
         fetchers: &Fetchers,
+        link_type_filter: LinkTypeFilter,
+        link_type: TY,
         start: FetchEntriesTime,
         end: FetchEntriesTime,
         base_component: String,
-    ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
+    ) -> Result<Vec<WireRecord<EntryType>>, WasmError>
+    where
+        ScopedLinkType: TryFrom<TY, Error = E>,
+        TY: Clone,
+        WasmError: From<E>,
+    {
         let mut dt = start.to_date_time();
         let mut entries = Vec::new();
         let end = end.to_date_time();
         while dt <= end {
-            entries.push(fetchers.day.fetch_entries_by_day::<EntryType>(
+            entries.push(fetchers.day.fetch_entries_by_day::<EntryType, TY, E>(
                 &fetchers.hour,
                 &fetchers.get_latest,
+                link_type_filter.clone(),
+                link_type.clone(),
                 FetchEntriesTime::from_date_time(dt.clone()),
                 base_component.clone(),
             ));
@@ -46,7 +57,7 @@ mod tests {
     use crate::datetime_queries::fetchers::Fetchers;
     use crate::datetime_queries::inputs::FetchEntriesTime;
 
-    use crate::wire_element::WireElement;
+    use crate::wire_record::WireRecord;
     use ::fixt::prelude::*;
     use hdk::prelude::*;
     #[test]
@@ -64,15 +75,15 @@ mod tests {
             hour: None,
         };
         let base_component = "create".to_string();
-        let wire_element = WireElement::<Example> {
-            header_hash: fixt![HeaderHashB64],
+        let wire_record = WireRecord::<Example> {
+            action_hash: fixt![ActionHashB64],
             entry_hash: fixt![EntryHashB64],
             entry: Example { number: 1 },
             created_at: fixt![Timestamp],
             updated_at: fixt![Timestamp],
         };
-        let wire_vec: Vec<WireElement<Example>> = vec![wire_element.clone()];
-        let wire_vec2 = vec![wire_element.clone(), wire_element.clone()];
+        let wire_vec: Vec<WireRecord<Example>> = vec![wire_record.clone()];
+        let wire_vec2 = vec![wire_record.clone(), wire_record.clone()];
 
         let mut mock_fetchers = Fetchers::default();
         // fetch_entries_by_day should be called for each day in the range

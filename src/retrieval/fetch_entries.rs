@@ -10,9 +10,10 @@ use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
+use hdk::hash_path::path::TypedPath;
 
 use crate::retrieval::inputs::FetchOptions;
-use crate::wire_element::WireElement;
+use crate::wire_record::WireRecord;
 use hdk::prelude::*;
 use std::convert::identity;
 
@@ -28,14 +29,16 @@ impl FetchEntries {
         &self,
         fetch_links: &FetchLinks,
         get_latest: &GetLatestEntry,
-        entry_path: Path, // TODO: see if there is a way to derive this from the entry itself (like from entry id)
+        link_type: LinkTypeFilter,
+        link_tag: Option<LinkTag>,
+        entry_path: TypedPath, // TODO: see if there is a way to derive this from the entry itself (like from entry id)
         fetch_options: FetchOptions,
         get_options: GetOptions,
-    ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
+    ) -> Result<Vec<WireRecord<EntryType>>, WasmError> {
         match fetch_options {
             FetchOptions::All => {
                 let path_hash = entry_path.path_entry_hash()?;
-                fetch_links.fetch_links::<EntryType>(get_latest, path_hash, get_options)
+                fetch_links.fetch_links::<EntryType>(get_latest, path_hash, link_type, link_tag, get_options)
                 // TODO: will have to instantiate or pass in the struct
             }
             FetchOptions::Specific(vec_entry_hash) => {
@@ -51,7 +54,7 @@ impl FetchEntries {
                     .filter_map(Result::ok)
                     // drop None and unwraps Some(_)
                     .filter_map(identity)
-                    .map(|x| WireElement::from(x))
+                    .map(|x| WireRecord::from(x))
                     .collect();
                 Ok(entries)
             }

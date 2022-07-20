@@ -3,25 +3,36 @@ use hdk::prelude::*;
 use super::fetchers::Fetchers;
 use super::inputs::FetchEntriesTime;
 use super::utils::is_valid_date_range;
-use crate::wire_element::WireElement;
+use crate::wire_record::WireRecord;
 
 /// fetches all entries of a certain type between two dates. Calls different sub methods depending on if an hour is suppled.
 pub fn fetch_entries_in_time_range<
     EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
+    TY,
+    E,
 >(
     fetchers: &Fetchers,
+    link_type_filter: LinkTypeFilter,
+    link_type: TY,
     start_time: FetchEntriesTime,
     end_time: FetchEntriesTime,
     base_component: String,
-) -> Result<Vec<WireElement<EntryType>>, WasmError> {
+) -> Result<Vec<WireRecord<EntryType>>, WasmError>
+where
+    ScopedLinkType: TryFrom<TY, Error = E>,
+    TY: Clone,
+    WasmError: From<E>,
+{
     is_valid_date_range(start_time.clone(), end_time.clone())?;
     match start_time.hour {
         None => {
             match end_time.hour {
                 None => fetchers
                     .day_to_day
-                    .fetch_entries_from_day_to_day::<EntryType>(
+                    .fetch_entries_from_day_to_day::<EntryType, TY, E>(
                         fetchers,
+                        link_type_filter,
+                        link_type,
                         start_time.clone(),
                         end_time.clone(),
                         base_component,
@@ -30,8 +41,10 @@ pub fn fetch_entries_in_time_range<
                     //day to hour: loop from 1st day to 2nd last day, then loop through hours in last day
                     fetchers
                         .day_to_hour
-                        .fetch_entries_from_day_to_hour::<EntryType>(
+                        .fetch_entries_from_day_to_hour::<EntryType, TY, E>(
                             fetchers,
+                            link_type_filter,
+                            link_type,
                             start_time.clone(),
                             end_time.clone(),
                             base_component,
@@ -45,8 +58,10 @@ pub fn fetch_entries_in_time_range<
                     // hour to day: loop through hours on first day, then 2nd day to last day
                     fetchers
                         .hour_to_day
-                        .fetch_entries_from_hour_to_day::<EntryType>(
+                        .fetch_entries_from_hour_to_day::<EntryType, TY, E>(
                             fetchers,
+                            link_type_filter,
+                            link_type,
                             start_time.clone(),
                             end_time.clone(),
                             base_component,
@@ -56,8 +71,10 @@ pub fn fetch_entries_in_time_range<
                     // hour to hour: loop through hours on first day, then 2nd day to 2nd last day, then hours on last day
                     fetchers
                         .hour_to_hour
-                        .fetch_entries_from_hour_to_hour::<EntryType>(
+                        .fetch_entries_from_hour_to_hour::<EntryType, TY, E>(
                             fetchers,
+                            link_type_filter,
+                            link_type,
                             start_time.clone(),
                             end_time.clone(),
                             base_component,
@@ -74,7 +91,7 @@ mod tests {
     use crate::datetime_queries::fetchers::Fetchers;
     use crate::datetime_queries::inputs::FetchEntriesTime;
 
-    use crate::wire_element::WireElement;
+    use crate::wire_record::WireRecord;
     use ::fixt::prelude::*;
     use hdk::prelude::*;
 
@@ -97,14 +114,14 @@ mod tests {
             hour: None,
         };
         let base_component = "create".to_string();
-        let wire_element = WireElement::<Example> {
-            header_hash: fixt![HeaderHashB64],
+        let wire_record = WireRecord::<Example> {
+            action_hash: fixt![ActionHashB64],
             entry_hash: fixt![EntryHashB64],
             entry: Example { number: 1 },
             created_at: fixt![Timestamp],
             updated_at: fixt![Timestamp],
         };
-        let wire_vec: Vec<WireElement<Example>> = vec![wire_element];
+        let wire_vec: Vec<WireRecord<Example>> = vec![wire_record];
         let mut mock_fetchers = Fetchers::default();
         mock_fetchers
             .day_to_day

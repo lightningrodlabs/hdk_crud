@@ -1,8 +1,8 @@
 use hdk::prelude::*;
-use holo_hash::HeaderHashB64;
+use holo_hash::ActionHashB64;
 use std::fmt;
 
-use crate::wire_element::WireElement;
+use crate::wire_record::WireRecord;
 
 /// when sending signals, distinguish
 /// between "create", "update", and "delete" actions
@@ -61,15 +61,15 @@ pub fn create_receive_signal_cap_grant() -> ExternResult<()> {
 /// to the UI based on different action types, like create/update/delete
 /// this will be used to send these data structures as signals to the UI
 /// When Create/Update, we will pass the actual new Entry
-/// but when doing Delete we will naturally only pass the HeaderHash
+/// but when doing Delete we will naturally only pass the ActionHash
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 // untagged because the useful tagging is done externally on the *Signal object
 // as the tag and action
 #[serde(untagged)]
 pub enum SignalData<T> {
-    Create(WireElement<T>),
-    Update(WireElement<T>),
-    Delete(HeaderHashB64),
+    Create(WireRecord<T>),
+    Update(WireRecord<T>),
+    Delete(ActionHashB64),
 }
 
 /// This will be used to send data events as signals to the UI. All
@@ -108,6 +108,7 @@ mod tests {
         functions.insert((zome_info.name, "recv_remote_signal".into()));
         let expected = CreateInput::new(
             EntryDefId::CapGrant,
+            EntryVisibility::Private,
             Entry::CapGrant(CapGrantEntry {
                 tag: "".into(),
                 // empty access converts to unrestricted
@@ -116,12 +117,12 @@ mod tests {
             }),
             ChainTopOrdering::Strict,
         );
-        let header_hash = fixt!(HeaderHash);
+        let action_hash = fixt!(ActionHash);
         mock_hdk
             .expect_create()
             .with(mockall::predicate::eq(expected))
             .times(1)
-            .return_const(Ok(header_hash));
+            .return_const(Ok(action_hash));
         set_hdk(mock_hdk);
         // call the function we are testing
         let result = create_receive_signal_cap_grant();

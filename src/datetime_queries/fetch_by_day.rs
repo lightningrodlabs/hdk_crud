@@ -1,6 +1,6 @@
 use crate::datetime_queries::inputs::FetchEntriesTime;
 use crate::datetime_queries::utils::{day_path_from_date, err, get_last_component_string};
-use crate::wire_element::WireElement;
+use crate::wire_record::WireRecord;
 use hdk::prelude::*;
 
 #[cfg(feature = "mock")]
@@ -22,14 +22,29 @@ impl FetchByDay {
     /// fetches all entries linked to a time path index for a certain day
     pub fn fetch_entries_by_day<
         EntryType: 'static + TryFrom<SerializedBytes, Error = SerializedBytesError>,
+        TY,
+        E,
     >(
         &self,
         fetch_by_hour: &FetchByHour,
         get_latest_entry: &GetLatestEntry,
+        link_type_filter: LinkTypeFilter,
+        link_type: TY,
         time: FetchEntriesTime,
         base_component: String,
-    ) -> Result<Vec<WireElement<EntryType>>, WasmError> {
-        let path = day_path_from_date(base_component.clone(), time.year, time.month, time.day);
+    ) -> Result<Vec<WireRecord<EntryType>>, WasmError>
+    where
+        ScopedLinkType: TryFrom<TY, Error = E>,
+        TY: Clone,
+        WasmError: From<E>,
+    {
+        let path = day_path_from_date(
+            link_type.clone(),
+            base_component.clone(),
+            time.year,
+            time.month,
+            time.day,
+        )?;
         // TODO: wrap in path.exists which would add extra hdk calls to be mocked in the test
         let children = path.children()?;
         let entries = children
@@ -37,8 +52,10 @@ impl FetchByDay {
             .map(|hour_link| {
                 let hour_str = get_last_component_string(hour_link.tag)?;
                 let hour = hour_str.parse::<u32>().or(Err(err("Invalid path")))?;
-                fetch_by_hour.fetch_entries_by_hour::<EntryType>(
+                fetch_by_hour.fetch_entries_by_hour::<EntryType, TY, E>(
                     &get_latest_entry,
+                    link_type_filter.clone(),
+                    link_type.clone(),
                     time.year,
                     time.month,
                     time.day,
@@ -59,11 +76,11 @@ mod tests {
     use crate::datetime_queries::fetch_by_hour;
     use crate::datetime_queries::inputs::FetchEntriesTime;
     use crate::retrieval::get_latest_for_entry;
-    use crate::wire_element::WireElement;
+    use crate::wire_record::WireRecord;
     use ::fixt::prelude::*;
-    use hdk::hash_path::path::{DHT_PREFIX, Component};
+    use hdk::hash_path::path::{Component, DHT_PREFIX};
     use hdk::prelude::*;
-    use holochain_types::prelude::ElementFixturator;
+    use holochain_types::prelude::RecordFixturator;
 
     #[test]
     fn test_fetch_entries_by_day() {
@@ -73,31 +90,39 @@ mod tests {
         // functions are called: hash_entry x4, get, get_links
 
         // set up for the first expected hash_entry call
-        
+
         let path = Path::from("create.2021-10-15");
         let path_hash = fixt!(EntryHash);
         let path_entry = PathEntry::new(path_hash.clone());
         let path_entry_hash = fixt!(EntryHash);
         mock_hdk
             .expect_hash_entry()
-            .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
+            .with(mockall::predicate::eq(
+                Entry::try_from(path.clone()).unwrap(),
+            ))
             .times(1)
             .return_const(Ok(path_hash.clone()));
 
         mock_hdk
             .expect_hash_entry()
-            .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+            .with(mockall::predicate::eq(
+                Entry::try_from(path_entry.clone()).unwrap(),
+            ))
             .times(1)
             .return_const(Ok(path_entry_hash.clone()));
         mock_hdk
             .expect_hash_entry()
-            .with(mockall::predicate::eq(Entry::try_from(path.clone()).unwrap()))
+            .with(mockall::predicate::eq(
+                Entry::try_from(path.clone()).unwrap(),
+            ))
             .times(1)
             .return_const(Ok(path_hash.clone()));
 
         mock_hdk
             .expect_hash_entry()
-            .with(mockall::predicate::eq(Entry::try_from(path_entry.clone()).unwrap()))
+            .with(mockall::predicate::eq(
+                Entry::try_from(path_entry.clone()).unwrap(),
+            ))
             .times(1)
             .return_const(Ok(path_entry_hash.clone()));
 
@@ -106,7 +131,7 @@ mod tests {
             AnyDhtHash::from(path_entry_hash.clone()),
             GetOptions::content(),
         )];
-        let expected_get_output = vec![Some(fixt!(Element))]; // this should return the path
+        let expected_get_output = vec![Some(fixt!(Record))]; // this should return the path
         mock_hdk
             .expect_get()
             .with(mockall::predicate::eq(path_get_input))
@@ -126,22 +151,24 @@ mod tests {
             [DHT_PREFIX]
                 .iter()
                 .chain(
-                    <Vec<u8>>::from(UnsafeBytes::from(SerializedBytes::try_from(hour_component).unwrap()))
+                    <Vec<u8>>::from(UnsafeBytes::from(
+                        SerializedBytes::try_from(hour_component).unwrap(),
+                    ))
                     .iter(),
                 )
                 .cloned()
                 .collect::<Vec<u8>>(),
-            );
+        );
 
         let link_output = Link {
             target: fixt![EntryHash],
             timestamp: fixt![Timestamp],
             tag: link_tag,
-            create_link_hash: fixt![HeaderHash],
+            create_link_hash: fixt![ActionHash],
         };
 
         // here we are assuming there is only one hour component to the day path, however if we wanted to
-        // make sure the code properly cycles through each hour component, we would add extra Link elements
+        // make sure the code properly cycles through each hour component, we would add extra Link records
         // to the below vector
         let get_links_output = vec![vec![link_output]];
 
@@ -159,14 +186,14 @@ mod tests {
             hour: None,
         };
         let base_component = "create".to_string();
-        let hour_entry = WireElement::<Example> {
-            header_hash: fixt![HeaderHashB64],
+        let hour_entry = WireRecord::<Example> {
+            action_hash: fixt![ActionHashB64],
             entry_hash: fixt![EntryHashB64],
             entry: Example { number: 1 },
             created_at: fixt![Timestamp],
             updated_at: fixt![Timestamp],
         };
-        let hour_entries: Vec<WireElement<Example>> = vec![hour_entry];
+        let hour_entries: Vec<WireRecord<Example>> = vec![hour_entry];
         // set up a mock of fetch_entries_by_hour
         let mut mock_queries = fetch_by_hour::MockFetchByHour::new();
         let mock_latest_entry = get_latest_for_entry::MockGetLatestEntry::new();

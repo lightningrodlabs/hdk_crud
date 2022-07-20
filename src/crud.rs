@@ -43,7 +43,7 @@
 #[macro_export]
 macro_rules! crud {
     (
-      $crud_type:ident, $i:ident, $path:expr, $get_peers:ident, $signal_type:ident
+      $crud_type:ident, $entry_types:ident, $entry_type:expr, $link_types:ident, $link_type:expr, $i:ident, $path:expr, $get_peers:ident, $signal_type:ident
     ) => {
         ::paste::paste! {
 
@@ -54,8 +54,12 @@ macro_rules! crud {
 
           /// Retrieve the Path for these entry types
           /// to which all entries are linked
-          pub fn [<get_ $i _path>]() -> Path {
-            Path::from([<$i:upper _PATH>])
+          pub fn [<get_ $i _path>]<TY, E>(link_type: TY) -> ExternResult<hdk::hash_path::path::TypedPath>
+          where
+            ScopedLinkType: TryFrom<TY, Error = E>,
+            WasmError: From<E>,
+          {
+            Path::from([<$i:upper _PATH>]).typed(link_type)
           }
 
           #[doc ="This is what is expected by a call to [update_" $path "]"]
@@ -63,7 +67,7 @@ macro_rules! crud {
           #[serde(rename_all = "camelCase")]
           pub struct [<$crud_type UpdateInput>] {
             pub entry: $crud_type,
-            pub header_hash: ::holo_hash::HeaderHashB64,
+            pub action_hash: ::holo_hash::ActionHashB64,
           }
 
           /*
@@ -76,12 +80,16 @@ macro_rules! crud {
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[hdk_extern]
-          pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            let create_action = $crate::chain_actions::create_action::CreateAction {};
-            create_action.create_action::<$crud_type, ::hdk::prelude::WasmError, $signal_type> (
+          pub fn [<create_ $i>](entry: $crud_type) -> ExternResult<$crate::wire_record::WireRecord<[<$crud_type>]>> {
+            let do_create = $crate::modify_chain::do_create::DoCreate {};
+            // wrap it in its EntryTypes variant
+            let full_entry = $entry_type(entry.clone());
+            do_create.do_create::<$entry_types, $crud_type, ::hdk::prelude::WasmError, $signal_type, $link_types> (
+              full_entry,
               entry,
-              Some($crate::chain_actions::create_action::PathOrEntryHash::Path([< get_ $i _path >]())),
+              Some($crate::modify_chain::do_create::TypedPathOrEntryHash::TypedPath([< get_ $i _path >]($link_type)?)),
               $path.to_string(),
+              $link_type,
               Some($get_peers()?),
               None,
             )
@@ -96,18 +104,21 @@ macro_rules! crud {
           /// No signals will be sent as a result of calling this.
           /// Notice that it pluralizes the value of `$i`, the second argument to the crud! macro call.
           #[hdk_extern]
-          pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::inputs::FetchOptions) -> ExternResult<Vec<$crate::wire_element::WireElement<[<$crud_type>]>>> {
-            let fetch_action = $crate::chain_actions::fetch_action::FetchAction {};
+          pub fn [<fetch_ $i s>](fetch_options: $crate::retrieval::inputs::FetchOptions) -> ExternResult<Vec<$crate::wire_record::WireRecord<[<$crud_type>]>>> {
+            let do_fetch = $crate::modify_chain::do_fetch::DoFetch {};
             let fetch_entries = $crate::retrieval::fetch_entries::FetchEntries {};
             let fetch_links = $crate::retrieval::fetch_links::FetchLinks {};
             let get_latest = $crate::retrieval::get_latest_for_entry::GetLatestEntry {};
-            fetch_action.fetch_action::<$crud_type, ::hdk::prelude::WasmError>(
+            let link_type_filter = LinkTypeFilter::try_from($link_type)?;
+            do_fetch.do_fetch::<$crud_type, ::hdk::prelude::WasmError>(
                 &fetch_entries,
                 &fetch_links,
                 &get_latest,
                 fetch_options,
                 GetOptions::latest(),
-                [< get_ $i _path >](),
+                link_type_filter,
+                None, // link_tag
+                [< get_ $i _path >]($link_type)?,
             )
           }
 
@@ -121,12 +132,13 @@ macro_rules! crud {
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[hdk_extern]
-          pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<$crate::wire_element::WireElement<[<$crud_type>]>> {
-            let update_action = $crate::chain_actions::update_action::UpdateAction {};
-            update_action.update_action::<$crud_type, ::hdk::prelude::WasmError, $signal_type>(
+          pub fn [<update_ $i>](update: [<$crud_type UpdateInput>]) -> ExternResult<$crate::wire_record::WireRecord<[<$crud_type>]>> {
+            let do_update = $crate::modify_chain::do_update::DoUpdate {};
+            do_update.do_update::<$crud_type, ::hdk::prelude::WasmError, $signal_type, $link_types>(
               update.entry,
-              update.header_hash,
+              update.action_hash,
               $path.to_string(),
+              $link_type,
               Some($get_peers()?),
               None,
             )
@@ -143,9 +155,9 @@ macro_rules! crud {
           /// It will send a signal of this event
           /// to all peers returned by the `get_peers` call given during the macro call to `crud!`
           #[hdk_extern]
-          pub fn [<delete_ $i>](address: ::holo_hash::HeaderHashB64) -> ExternResult<::holo_hash::HeaderHashB64> {
-            let delete_action = $crate::chain_actions::delete_action::DeleteAction {};
-            delete_action.delete_action::<$crud_type, ::hdk::prelude::WasmError, $signal_type>(
+          pub fn [<delete_ $i>](address: ::holo_hash::ActionHashB64) -> ExternResult<::holo_hash::ActionHashB64> {
+            let do_delete = $crate::modify_chain::do_delete::DoDelete {};
+            do_delete.do_delete::<$crud_type, ::hdk::prelude::WasmError, $signal_type>(
               address,
               $path.to_string(),
               Some($get_peers()?),
@@ -170,10 +182,23 @@ pub mod example {
     /// NOT GENERATED
     /// This is our example hdk_entry entry
     /// type definition.
-    #[hdk_entry(id = "example")]
+    #[hdk_entry_helper]
     #[derive(Clone, PartialEq)]
     pub struct Example {
         pub number: i32,
+    }
+
+    #[hdk_entry_defs]
+    #[unit_enum(UnitEntryTypes)]
+    #[derive(Clone)]
+    pub enum EntryTypes {
+        #[entry_def(required_validations = 5)]
+        Example(Example),
+    }
+
+    #[hdk_link_types]
+    pub enum LinkTypes {
+        All,
     }
 
     /// NOT GENERATED
@@ -208,5 +233,15 @@ pub mod example {
     }
 
     #[cfg(not(feature = "mock"))]
-    crud!(Example, example, "example", get_peers, SignalTypes);
+    crud!(
+        Example,
+        EntryTypes,
+        EntryTypes::Example,
+        LinkTypes,
+        LinkTypes::All,
+        example,
+        "example",
+        get_peers,
+        SignalTypes
+    );
 }
