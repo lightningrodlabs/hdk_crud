@@ -7,16 +7,31 @@
 /// ```ignore
 /// use hdk::prelude::*;
 /// use hdk_crud::*;
-/// #[hdk_entry(id = "example")]
+/// 
+/// #[hdk_entry_helper]
 /// #[derive(Clone, PartialEq)]
 /// pub struct Example {
 ///     pub number: i32,
 /// }
+/// 
+/// #[hdk_entry_defs]
+/// #[unit_enum(UnitEntryTypes)]
+/// #[derive(Clone)]
+/// pub enum EntryTypes {
+///     #[entry_def(required_validations = 5)]
+///     Example(Example),
+/// }
+/// 
+/// #[hdk_link_types]
+/// pub enum LinkTypes {
+///     All,
+/// }
+/// 
 /// // TestSignal pops out of the crud! macro
 /// #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 /// #[serde(untagged)]
 /// pub enum SignalTypes {
-/// Example(ActionSignal<Example>),
+///     Example(ActionSignal<Example>),
 /// }
 /// impl From<ActionSignal<Example>> for SignalTypes {
 ///     fn from(value: ActionSignal<Example>) -> Self {
@@ -33,11 +48,15 @@
 /// }
 ///
 /// crud!(
-///     Example,
-///     example,
-///     "example",
-///     get_peers,
-///     SignalTypes
+///   Example,
+///   EntryTypes,
+///   EntryTypes::Example,
+///   LinkTypes,
+///   LinkTypes::All,
+///   example,
+///   "example",
+///   get_peers,
+///   SignalTypes
 /// );
 /// ```
 #[macro_export]
@@ -175,6 +194,7 @@ macro_rules! crud {
 /// It will generate 4 public Zome functions
 /// The 4 Zome functions in this example would be:
 /// [create_example](example::create_example), [fetch_examples](example::fetch_examples), [update_example](example::update_example), and [delete_example](example::delete_example).
+#[cfg(not(feature = "no_example"))]
 pub mod example {
     use crate::signals::*;
     use hdk::prelude::*;

@@ -33,4 +33,5 @@ mock = [
   "mockall_double",
   "holochain_types"
 ]
+no_example = []
 test_utils = ["fixt"]
