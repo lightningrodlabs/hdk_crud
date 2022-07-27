@@ -5,14 +5,6 @@ use crate::{datetime_queries::utils::serialize_err, retrieval::utils::*, wire_re
 #[cfg(feature = "mock")]
 use ::mockall::automock;
 
-/// A triple of an Entry along with the ActionHash
-/// of that committed entry and the EntryHash of the entry
-pub type EntryAndHash<T> = (T, ActionHash, EntryHash);
-
-/// The same as an EntryAndHash but inside an Option,
-/// so it can be Some(...) or None
-pub type OptionEntryAndHash<T> = Option<EntryAndHash<T>>;
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct GetLatestEntry {}
 #[cfg_attr(feature = "mock", automock)]
