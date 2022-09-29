@@ -8,8 +8,8 @@ authors = ["Connor Turland <connor@sprillow.com>"]
 edition = "2021"
 
 [dependencies]
-hdk = "0.0.152"
-holo_hash = { version = "0.0.32", features = ["encoding"] }
+hdk = "=0.0.152"
+holo_hash = { version = "=0.0.32", features = ["encoding"] }
 paste = "1.0.5"
 serde = "1.0.123"
 thiserror = "1"
