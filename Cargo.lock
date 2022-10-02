@@ -1589,7 +1589,7 @@ dependencies = [
 
 [[package]]
 name = "hdk_crud"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "assert_matches",
  "chrono",
@@ -2421,9 +2421,9 @@ checksum = "884e2677b40cc8c339eaefcb701c32ef1fd2493d71118dc0ca4b6a736c93bd67"
 
 [[package]]
 name = "libc"
-version = "0.2.133"
+version = "0.2.134"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0f80d65747a3e43d1596c7c5492d95d5edddaabd45a7fcdb02b95f644164966"
+checksum = "329c933548736bc49fd575ee68c89e8be4d260064184389a5b77517cddd99ffb"
 
 [[package]]
 name = "libflate"
