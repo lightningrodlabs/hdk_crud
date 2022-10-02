@@ -6,6 +6,8 @@ use holo_hash::{ActionHashB64, AgentPubKey, EntryHashB64};
 #[cfg(feature = "mock")]
 use ::mockall::automock;
 
+use super::utils::create_link_relaxed;
+
 /// an enum passed into do_create to indicate whether the newly created entry is to be
 /// linked off a path (like an anchor for entry types) or a supplied entry hash
 #[derive(Debug, PartialEq, Clone)]
@@ -69,7 +71,7 @@ impl DoCreate {
                     // link off entry path
                     path.ensure()?;
                     let path_hash = path.path_entry_hash()?;
-                    create_link(
+                    create_link_relaxed(
                         path_hash,
                         entry_hash.clone(),
                         scoped_link_type.clone(),
@@ -78,7 +80,7 @@ impl DoCreate {
                 }
                 TypedPathOrEntryHash::EntryHash(base_entry_hash) => {
                     // link off supplied entry hash
-                    create_link(
+                    create_link_relaxed(
                         base_entry_hash,
                         entry_hash.clone(),
                         scoped_link_type.clone(),
