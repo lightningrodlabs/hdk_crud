@@ -53,12 +53,12 @@ impl DoCreate {
     {
         // calling create instead of create_entry to be able to indicate relaxed chain ordering
         let ScopedEntryDefIndex {
-            zome_id,
+            zome_index,
             zome_type: entry_def_index,
         } = (&full_entry).try_into()?;
         let visibility = EntryVisibility::from(&full_entry);
         let address = create(CreateInput::new(
-            EntryDefLocation::app(zome_id, entry_def_index),
+            EntryDefLocation::app(zome_index, entry_def_index),
             visibility,
             full_entry.clone().try_into()?,
             ChainTopOrdering::Relaxed,
