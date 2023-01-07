@@ -1,14 +1,14 @@
 [package]
 name = "hdk_crud"
 description = "A library to help quickly and easily create a consistent set of create-read-update-delete functions for an Entry type in Holochain, complete with signaling options"
-version = "0.9.0"
+version = "0.10.0"
 license = "CAL-1.0"
 repository = "https://github.com/lightningrodlabs/hdk_crud"
 authors = ["Connor Turland <connor@sprillow.com>", "Wesley Finck <wesleyfinck@gmail.com"]
 edition = "2021"
 
 [dependencies]
-hdk = "0.1.0-beta-rc.0"
+hdk = "0.1.0-beta-rc.1"
 holo_hash = { version = "0.1.0-beta-rc.0", features = ["encoding"] }
 paste = "1.0.5"
 serde = "1.0.123"
