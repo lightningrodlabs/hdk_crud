@@ -7,13 +7,13 @@
 /// ```ignore
 /// use hdk::prelude::*;
 /// use hdk_crud::*;
-/// 
+///
 /// #[hdk_entry_helper]
 /// #[derive(Clone, PartialEq)]
 /// pub struct Example {
 ///     pub number: i32,
 /// }
-/// 
+///
 /// #[hdk_entry_defs]
 /// #[unit_enum(UnitEntryTypes)]
 /// #[derive(Clone)]
@@ -21,12 +21,12 @@
 ///     #[entry_def(required_validations = 5)]
 ///     Example(Example),
 /// }
-/// 
+///
 /// #[hdk_link_types]
 /// pub enum LinkTypes {
 ///     All,
 /// }
-/// 
+///
 /// // TestSignal pops out of the crud! macro
 /// #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 /// #[serde(untagged)]
@@ -73,7 +73,7 @@ macro_rules! crud {
 
           /// Retrieve the Path for these entry types
           /// to which all entries are linked
-          pub fn [<get_ $i _path>]<TY, E>(link_type: TY) -> ExternResult<hdk::hash_path::path::TypedPath>
+          pub fn [<get_ $i _path>]<TY, E>(link_type: TY) -> ExternResult<TypedPath>
           where
             ScopedLinkType: TryFrom<TY, Error = E>,
             WasmError: From<E>,
@@ -134,7 +134,7 @@ macro_rules! crud {
                 &fetch_links,
                 &get_latest,
                 fetch_options,
-                GetOptions::latest(),
+                GetOptions::network(),
                 link_type_filter,
                 None, // link_tag
                 [< get_ $i _path >]($link_type)?,
@@ -208,11 +208,11 @@ pub mod example {
         pub number: i32,
     }
 
-    #[hdk_entry_defs]
+    #[hdk_entry_types]
     #[unit_enum(UnitEntryTypes)]
     #[derive(Clone)]
     pub enum EntryTypes {
-        #[entry_def(required_validations = 5)]
+        #[entry_type(required_validations = 5)]
         Example(Example),
     }
 

@@ -1,3 +1,4 @@
+use hash_type::{AnyDht, AnyLinkable};
 use hdk::prelude::*;
 
 use crate::{datetime_queries::utils::serialize_err, retrieval::utils::*, wire_record::WireRecord};
@@ -26,7 +27,7 @@ impl GetLatestEntry {
     ) -> ExternResult<Option<WireRecord<T>>> {
         match get_details(entry_hash.clone(), get_options.clone())? {
             Some(Details::Entry(details)) => match details.entry_dht_status {
-                metadata::EntryDhtStatus::Live => {
+                EntryDhtStatus::Live => {
                     let first_action = details.actions.first().unwrap();
                     let created_at = first_action.action().timestamp();
                     match details.updates.len() {
@@ -72,7 +73,7 @@ impl GetLatestEntry {
                         }
                     }
                 }
-                metadata::EntryDhtStatus::Dead => Ok(None),
+                EntryDhtStatus::Dead => Ok(None),
                 _ => Ok(None),
             },
             _ => Ok(None),

@@ -79,7 +79,7 @@ impl DoUpdate {
                 };
                 let signal = S::from(action_signal);
                 let payload = ExternIO::encode(signal).map_err(serialize_err)?;
-                remote_signal(payload, vec_peers)?;
+                send_remote_signal(payload, vec_peers)?;
             }
         }
         Ok(wire_entry)
