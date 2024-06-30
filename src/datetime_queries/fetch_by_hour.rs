@@ -35,7 +35,7 @@ impl FetchByHour {
         WasmError: From<E>,
     {
         let path = hour_path_from_date(link_type, base_component.clone(), year, month, day, hour)?;
-        let mut input = GetLinksInputBuilder::try_new(path.path_entry_hash()?, link_type_filter)?;
+        let input = GetLinksInputBuilder::try_new(path.path_entry_hash()?, link_type_filter)?;
         let links = get_links(input.build())?;
 
         let entries: Vec<WireRecord<EntryType>> = links

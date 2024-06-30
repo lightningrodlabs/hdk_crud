@@ -1,4 +1,3 @@
-use hash_type::{AnyDht, AnyLinkable};
 use hdk::prelude::*;
 
 use crate::{datetime_queries::utils::serialize_err, retrieval::utils::*, wire_record::WireRecord};
