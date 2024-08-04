@@ -8,8 +8,8 @@ authors = ["Connor Turland <connor@sprillow.com>", "Wesley Finck <wesleyfinck@gm
 edition = "2021"
 
 [dependencies]
-hdk = "0.4.0-dev.4"
-holo_hash = { version = "0.4.0-dev.4", features = ["encoding"] }
+hdk = "0.4.0-dev.5"
+holo_hash = { version = "0.4.0-dev.5", features = ["encoding"] }
 paste = "*"
 serde = "*"
 thiserror = "1"
@@ -19,7 +19,7 @@ mockall_double = { version = "0.2.0", optional = true }
 # specific so as to avoid wasm-bindgen dependency
 chrono = { version = "*", default-features = false, features = ["clock", "std", "oldtime", "serde"] }
 assert_matches = "1.5.0"
-holochain_types = { version = "0.4.0-dev.4", optional = true }
+holochain_types = { version = "0.4.0-dev.5", optional = true }
 
 [dev-dependencies]
 rand = "0.7"
