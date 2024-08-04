@@ -10,7 +10,6 @@ use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry
 
 #[cfg(feature = "mock")]
 use ::mockall::automock;
-use hdk::hash_path::path::TypedPath;
 
 use crate::retrieval::inputs::FetchOptions;
 use crate::wire_record::WireRecord;
@@ -38,7 +37,13 @@ impl FetchEntries {
         match fetch_options {
             FetchOptions::All => {
                 let path_hash = entry_path.path_entry_hash()?;
-                fetch_links.fetch_links::<EntryType>(get_latest, path_hash, link_type, link_tag, get_options)
+                fetch_links.fetch_links::<EntryType>(
+                    get_latest,
+                    path_hash,
+                    link_type,
+                    link_tag,
+                    get_options,
+                )
                 // TODO: will have to instantiate or pass in the struct
             }
             FetchOptions::Specific(vec_entry_hash) => {
@@ -46,7 +51,7 @@ impl FetchEntries {
                     .iter()
                     .map(|entry_hash| {
                         get_latest.get_latest_for_entry::<EntryType>(
-                            entry_hash.clone().into(),
+                            EntryHash::from(entry_hash.clone()).into(),
                             get_options.clone(),
                         )
                     })

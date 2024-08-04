@@ -129,7 +129,7 @@ mod tests {
         // // set up for expected get call
         let path_get_input = vec![GetInput::new(
             AnyDhtHash::from(path_entry_hash.clone()),
-            GetOptions::content(),
+            GetOptions::local(),
         )];
         let expected_get_output = vec![Some(fixt!(Record))]; // this should return the path
         mock_hdk

@@ -13,7 +13,7 @@ use crate::retrieval::fetch_links::MockFetchLinks as FetchLinks;
 use crate::retrieval::get_latest_for_entry::MockGetLatestEntry as GetLatestEntry;
 
 use crate::wire_record::WireRecord;
-use hdk::hash_path::path::TypedPath;
+use hdi::hash_path::path::TypedPath;
 use hdk::prelude::*;
 
 #[cfg(feature = "mock")]

@@ -1,6 +1,6 @@
 use crate::wire_record::WireRecord;
 use crate::{datetime_queries::utils::serialize_err, modify_chain::utils::add_current_time_path};
-use hdk::{hash_path::path::TypedPath, prelude::*};
+use hdk::prelude::*;
 use holo_hash::{ActionHashB64, AgentPubKey, EntryHashB64};
 
 #[cfg(feature = "mock")]
@@ -121,7 +121,7 @@ impl DoCreate {
                     };
                 let signal = S::from(action_signal);
                 let payload = ExternIO::encode(signal).map_err(serialize_err)?;
-                remote_signal(payload, vec_peers)?;
+                send_remote_signal(payload, vec_peers)?;
             }
         }
         Ok(wire_entry)

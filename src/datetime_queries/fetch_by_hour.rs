@@ -34,14 +34,19 @@ impl FetchByHour {
         TY: Clone,
         WasmError: From<E>,
     {
-        let path = hour_path_from_date(link_type,  base_component.clone(), year, month, day, hour)?;
-        let links = get_links(path.path_entry_hash()?, link_type_filter, None)?;
+        let path = hour_path_from_date(link_type, base_component.clone(), year, month, day, hour)?;
+        let input = GetLinksInputBuilder::try_new(path.path_entry_hash()?, link_type_filter)?;
+        let links = get_links(input.build())?;
 
         let entries: Vec<WireRecord<EntryType>> = links
             .into_iter()
             .map(|link| {
-                get_latest_entry
-                    .get_latest_for_entry::<EntryType>(link.target.into(), GetOptions::latest())
+                get_latest_entry.get_latest_for_entry::<EntryType>(
+                    link.target.try_into().map_err(|_| {
+                        wasm_error!(WasmErrorInner::Guest("Target is not an entry".to_string()))
+                    })?,
+                    GetOptions::network(),
+                )
             })
             .filter_map(Result::ok)
             .filter_map(identity)
@@ -119,7 +124,7 @@ mod tests {
             .expect_get_latest_for_entry::<Example>()
             .with(
                 mockall::predicate::eq(link_output.target),
-                mockall::predicate::eq(GetOptions::latest()),
+                mockall::predicate::eq(GetOptions::network()),
             )
             .times(1)
             .return_const(Ok(get_latest_output.clone()));
